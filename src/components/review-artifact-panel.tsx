@@ -2,7 +2,13 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { UserPlus, Download, GripVertical, ArrowLeft } from "lucide-react";
+import { UserPlus, Download, GripVertical, ArrowLeft, Layers, UserPlus as UserPlusIcon } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   createColumnHelper,
   flexRender,
@@ -15,6 +21,10 @@ import {
 import ReviewTableToolbar from "@/components/review-table-toolbar";
 import ShareArtifactDialog from "@/components/share-artifact-dialog";
 import ExportReviewDialog from "@/components/export-review-dialog";
+import IManageFilePickerDialog from "@/components/imanage-file-picker-dialog";
+import ReviewTableActionBar from "@/components/review-table-action-bar";
+import ManageGroupedFilesPopover from "@/components/manage-grouped-files-popover";
+import Image from "next/image";
 
 // Extend column meta type for draggable property
 declare module '@tanstack/table-core' {
@@ -111,113 +121,17 @@ type Document = {
   agreementParties: string;
   forceMajeureClause: 'Disputed' | 'Not Disputed' | 'Somewhat Disputed';
   assignmentProvisionSummary: string;
+  groupedCount?: number;
 };
 
-const data: Document[] = [
-  {
-    id: 1,
-    selected: false,
-    fileName: 'SEC_Filing_10-K_2023.pdf',
-    agreementParties: 'TerreStar 1.4 Holdings LLC (Lessor), TerreStar...',
-    forceMajeureClause: 'Disputed',
-    assignmentProvisionSummary:
-      'No assignment without consent, except to wh...',
-  },
-  {
-    id: 2,
-    selected: false,
-    fileName: 'C05763098.pdf',
-    agreementParties: 'T-Mobile USA, Inc., DISH Purchasing Corporat...',
-    forceMajeureClause: 'Somewhat Disputed',
-    assignmentProvisionSummary: 'No assignment without prior written consent.',
-  },
-  {
-    id: 3,
-    selected: false,
-    fileName: 'Probable Cause Hearing Transcripts...',
-    agreementParties: 'SunSpark Technology Inc. (California corporati...',
-    forceMajeureClause: 'Not Disputed',
-    assignmentProvisionSummary:
-      'No assignment without consent, null if viola...',
-  },
-  {
-    id: 4,
-    selected: false,
-    fileName: 'Delta Inventory Supply Agreement.pdf',
-    agreementParties: 'Delta Airlines LLC (Georgia corporation)',
-    forceMajeureClause: 'Not Disputed',
-    assignmentProvisionSummary: 'No assignment without prior written consent.',
-  },
-  {
-    id: 5,
-    selected: false,
-    fileName: 'menlo-shankar-PEO.pdf',
-    agreementParties: 'Smith & Wesson Inc., Crimson Trace Corporati...',
-    forceMajeureClause: 'Not Disputed',
-    assignmentProvisionSummary:
-      'WKKC cannot assign the contract without Kel...',
-  },
-  {
-    id: 6,
-    selected: false,
-    fileName: 'Deposition_Transcript_Jones.pdf',
-    agreementParties: 'No information',
-    forceMajeureClause: 'Disputed',
-    assignmentProvisionSummary:
-      'No assignment without consent, except to wh...',
-  },
-  {
-    id: 7,
-    selected: false,
-    fileName: 'Discovery_Request_21083.pdf',
-    agreementParties: 'Ultragenyx Pharmaceutical Inc. (UGX), IOI Oleo...',
-    forceMajeureClause: 'Disputed',
-    assignmentProvisionSummary: 'Assignment allowed with conditions.',
-  },
-  {
-    id: 8,
-    selected: false,
-    fileName: 'AD08912631234.pdf',
-    agreementParties: 'No information',
-    forceMajeureClause: 'Disputed',
-    assignmentProvisionSummary: 'Assignment requires prior written consent.',
-  },
-  {
-    id: 9,
-    selected: false,
-    fileName: 'tmp_lease_document2023621.pdf',
-    agreementParties: "Pilgrim's Pride Corporation (Shipper), Pat Pilgri...",
-    forceMajeureClause: 'Somewhat Disputed',
-    assignmentProvisionSummary: 'No assignment without prior written consent.',
-  },
-  {
-    id: 10,
-    selected: false,
-    fileName: 'policy_document_12_24_08.pdf',
-    agreementParties: 'No information',
-    forceMajeureClause: 'Somewhat Disputed',
-    assignmentProvisionSummary:
-      'Assignment requires consent, with exception...',
-  },
-  {
-    id: 11,
-    selected: false,
-    fileName: '2-23-20250207T001925Z-001.pdf',
-    agreementParties: 'Seattle Genetics, Inc. and SAFC, an operating...',
-    forceMajeureClause: 'Disputed',
-    assignmentProvisionSummary:
-      'Assignment requires consent, with exception...',
-  },
-  {
-    id: 12,
-    selected: false,
-    fileName: 'Plaintiff_Exhibit_List.pdf',
-    agreementParties: 'Crown Electrokinetics Corp., Brandywine O...',
-    forceMajeureClause: 'Not Disputed',
-    assignmentProvisionSummary:
-      "Company needs Aron's consent to assign; Aro...",
-  },
-];
+interface SelectedFile {
+  id: string;
+  name: string;
+  type: 'folder' | 'file';
+  modifiedDate: string;
+  size?: string;
+  path: string;
+}
 
 const columnHelper = createColumnHelper<Document>();
 
@@ -336,6 +250,8 @@ interface ReviewArtifactPanelProps {
   artifactTitleInputRef: React.RefObject<HTMLInputElement | null>;
   isEmpty?: boolean;
   showBackButton?: boolean;
+  selectedFiles?: SelectedFile[];
+  onFilesSelected?: (files: SelectedFile[]) => void;
 }
 
 const PANEL_ANIMATION = {
@@ -359,7 +275,9 @@ export default function ReviewArtifactPanel({
   onExportReviewDialogOpenChange,
   artifactTitleInputRef,
   isEmpty = false,
-  showBackButton = false
+  showBackButton = false,
+  selectedFiles = [],
+  onFilesSelected
 }: ReviewArtifactPanelProps) {
   const [alignment, setAlignment] = React.useState<'top' | 'center' | 'bottom'>('center');
   const [textWrap, setTextWrap] = React.useState<boolean>(false);
@@ -369,6 +287,169 @@ export default function ReviewArtifactPanel({
   const [draggedColumn, setDraggedColumn] = React.useState<string | null>(null);
   const [hoveredHeader, setHoveredHeader] = React.useState<string | null>(null);
   const [dropTarget, setDropTarget] = React.useState<string | null>(null);
+  const [iManageDialogOpen, setIManageDialogOpen] = React.useState(false);
+  const [tableData, setTableData] = React.useState<Document[]>([]);
+  const [manageGroupedFilesRowId, setManageGroupedFilesRowId] = React.useState<number | null>(null);
+  const [manageGroupedFilesAnchor, setManageGroupedFilesAnchor] = React.useState<HTMLElement | null>(null);
+  
+  // Transform selected files into table data format - only for initialization
+  const initialData: Document[] = React.useMemo(() => {
+    if (selectedFiles.length === 0) {
+      // Return original mock data when no files selected
+      return [
+        {
+          id: 1,
+          selected: false,
+          fileName: 'SEC_Filing_10-K_2023.pdf',
+          agreementParties: 'TerreStar 1.4 Holdings LLC (Lessor), TerreStar...',
+          forceMajeureClause: 'Disputed',
+          assignmentProvisionSummary: 'No assignment without consent, except to wh...',
+        },
+        {
+          id: 2,
+          selected: false,
+          fileName: 'C05763098.pdf',
+          agreementParties: 'T-Mobile USA, Inc., DISH Purchasing Corporat...',
+          forceMajeureClause: 'Somewhat Disputed',
+          assignmentProvisionSummary: 'No assignment without prior written consent.',
+        },
+        {
+          id: 3,
+          selected: false,
+          fileName: 'Probable Cause Hearing Transcripts...',
+          agreementParties: 'SunSpark Technology Inc. (California corporati...',
+          forceMajeureClause: 'Not Disputed',
+          assignmentProvisionSummary: 'No assignment without consent, null if viola...',
+        },
+        {
+          id: 4,
+          selected: false,
+          fileName: 'Delta Inventory Supply Agreement.pdf',
+          agreementParties: 'Delta Airlines LLC (Georgia corporation)',
+          forceMajeureClause: 'Not Disputed',
+          assignmentProvisionSummary: 'No assignment without prior written consent.',
+        },
+        {
+          id: 5,
+          selected: false,
+          fileName: 'menlo-shankar-PEO.pdf',
+          agreementParties: 'Smith & Wesson Inc., Crimson Trace Corporati...',
+          forceMajeureClause: 'Not Disputed',
+          assignmentProvisionSummary: 'WKKC cannot assign the contract without Kel...',
+        },
+        {
+          id: 6,
+          selected: false,
+          fileName: 'Deposition_Transcript_Jones.pdf',
+          agreementParties: 'No information',
+          forceMajeureClause: 'Disputed',
+          assignmentProvisionSummary: 'No assignment without consent, except to wh...',
+        },
+        {
+          id: 7,
+          selected: false,
+          fileName: 'Discovery_Request_21083.pdf',
+          agreementParties: 'Ultragenyx Pharmaceutical Inc. (UGX), IOI Oleo...',
+          forceMajeureClause: 'Disputed',
+          assignmentProvisionSummary: 'Assignment allowed with conditions.',
+        },
+        {
+          id: 8,
+          selected: false,
+          fileName: 'AD08912631234.pdf',
+          agreementParties: 'No information',
+          forceMajeureClause: 'Disputed',
+          assignmentProvisionSummary: 'Assignment requires prior written consent.',
+        },
+        {
+          id: 9,
+          selected: false,
+          fileName: 'tmp_lease_document2023621.pdf',
+          agreementParties: "Pilgrim's Pride Corporation (Shipper), Pat Pilgri...",
+          forceMajeureClause: 'Somewhat Disputed',
+          assignmentProvisionSummary: 'No assignment without prior written consent.',
+        },
+        {
+          id: 10,
+          selected: false,
+          fileName: 'policy_document_12_24_08.pdf',
+          agreementParties: 'No information',
+          forceMajeureClause: 'Somewhat Disputed',
+          assignmentProvisionSummary: 'Assignment requires consent, with exception...',
+        },
+        {
+          id: 11,
+          selected: false,
+          fileName: '2-23-20250207T001925Z-001.pdf',
+          agreementParties: 'Seattle Genetics, Inc. and SAFC, an operating...',
+          forceMajeureClause: 'Disputed',
+          assignmentProvisionSummary: 'Assignment requires consent, with exception...',
+        },
+        {
+          id: 12,
+          selected: false,
+          fileName: 'Plaintiff_Exhibit_List.pdf',
+          agreementParties: 'Crown Electrokinetics Corp., Brandywine O...',
+          forceMajeureClause: 'Not Disputed',
+          assignmentProvisionSummary: "Company needs Aron's consent to assign; Aro...",
+        },
+      ];
+    }
+    
+    // Map selected files to Document format
+    return selectedFiles
+      .filter(file => file.type === 'file') // Only include actual files, not folders
+      .map((file, index) => ({
+        id: index + 1,
+        selected: false,
+        fileName: file.name,
+        agreementParties: 'Processing...',
+        forceMajeureClause: 'Not Disputed' as const,
+        assignmentProvisionSummary: 'Analyzing document...',
+      }));
+  }, [selectedFiles]);
+
+  // Update tableData when initialData changes
+  React.useEffect(() => {
+    setTableData(initialData);
+  }, [initialData]);
+
+  const data = tableData;
+  
+  // Handle group files
+  const handleGroupFiles = React.useCallback(() => {
+    if (selectedRows.size === 0) return;
+    
+    // Get all selected row IDs
+    const selectedIds = Array.from(selectedRows);
+    
+    // Find the first selected row
+    const firstSelectedId = Math.min(...selectedIds);
+    
+    // Count how many rows to group (excluding the first one)
+    const groupCount = selectedIds.length - 1;
+    
+    if (groupCount === 0) return; // Nothing to group if only one row selected
+    
+    // Update the data: keep only the first selected row, remove others, and add grouped count
+    setTableData(prevData => 
+      prevData
+        .map(row => {
+          if (row.id === firstSelectedId) {
+            // Add the grouped count to the first selected row
+            return { 
+              ...row, 
+              groupedCount: (row.groupedCount || 0) + groupCount 
+            };
+          }
+          return row;
+        })
+        .filter(row => !selectedIds.includes(row.id) || row.id === firstSelectedId)
+    );
+    
+    // Clear selection
+    setSelectedRows(new Set());
+  }, [selectedRows]);
   
   // Get vertical alignment style based on alignment prop
   const getVerticalAlign = () => {
@@ -402,7 +483,12 @@ export default function ReviewArtifactPanel({
     } else {
       setSelectedRows(new Set(data.map(row => row.id)));
     }
-  }, [selectedRows.size]);
+  }, [selectedRows.size, data]);
+  
+  // Handle clear selection
+  const clearSelection = React.useCallback(() => {
+    setSelectedRows(new Set());
+  }, []);
   
   // Check if all rows are selected
   const isAllSelected = selectedRows.size === data.length && selectedRows.size > 0;
@@ -456,12 +542,70 @@ export default function ReviewArtifactPanel({
       size: 220,
       minSize: 100,
       maxSize: 280,
-      cell: ({ getValue }) => (
-        <div className='flex items-center gap-1 px-2 py-1 rounded-[4px] bg-[#F3F3F1]'>
-          <PdfHarveyIcon className='h-3 w-3 text-gray-400 flex-shrink-0' />
-          <span className='truncate'>{getValue()}</span>
-        </div>
-      ),
+      cell: ({ row }) => {
+        const isHovered = hoveredRow === row.original.id;
+        const hasGroupedFiles = row.original.groupedCount && row.original.groupedCount > 0;
+        
+        return (
+          <div className='flex items-center gap-1.5 relative'>
+            <div className='flex items-center gap-1 px-2 py-1 rounded-[4px] bg-[#F3F3F1] flex-1 min-w-0'>
+              <PdfHarveyIcon className='h-3 w-3 text-gray-400 flex-shrink-0' />
+              <span className='truncate'>{row.original.fileName}</span>
+            </div>
+            {hasGroupedFiles && (
+              <span className='px-1.5 py-0.5 bg-neutral-200 text-neutral-700 rounded text-xs font-medium flex-shrink-0'>
+                +{row.original.groupedCount}
+              </span>
+            )}
+            
+            {/* Hover Control Bar */}
+            {isHovered && (
+              <TooltipProvider delayDuration={0}>
+                <div 
+                  className='absolute right-0 flex items-center gap-0.5 bg-white rounded-md p-0.5 shadow-md border border-neutral-200'
+                >
+                  {hasGroupedFiles && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setManageGroupedFilesRowId(row.original.id);
+                            setManageGroupedFilesAnchor(e.currentTarget.closest('td'));
+                          }}
+                          className='p-1.5 hover:bg-neutral-100 rounded transition-colors text-neutral-700'
+                        >
+                          <Layers size={14} />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Manage grouped files</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                  
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          console.log('Assign');
+                        }}
+                        className='p-1.5 hover:bg-neutral-100 rounded transition-colors text-neutral-700'
+                      >
+                        <UserPlusIcon size={14} />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Assign</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              </TooltipProvider>
+            )}
+          </div>
+        );
+      },
     }),
     columnHelper.accessor('agreementParties', {
       header: ({ column }) => {
@@ -788,15 +932,18 @@ export default function ReviewArtifactPanel({
                       <span className="text-xs text-neutral-500">(OneDrive)</span>
                     </button>
                     
-                    <button className="flex items-center gap-2 px-3 py-2 border border-neutral-200 rounded-md hover:bg-neutral-50 transition-colors">
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M3.2 8.8L5.6 11.2L12 4.8" stroke="#4285F4" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M8 1.6C4.464 1.6 1.6 4.464 1.6 8C1.6 11.536 4.464 14.4 8 14.4C11.536 14.4 14.4 11.536 14.4 8C14.4 4.464 11.536 1.6 8 1.6Z" fill="#FBBC04"/>
-                        <path d="M8 1.6V4.8L11.2 8" stroke="#34A853" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M8 8L4.8 11.2" stroke="#EA4335" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                      <span className="text-sm font-medium text-neutral-900">Google Drive</span>
-                    </button>
+                  <button 
+                    onClick={() => setIManageDialogOpen(true)}
+                    className="flex items-center gap-2 px-3 py-2 border border-neutral-200 rounded-md hover:bg-neutral-50 transition-colors"
+                  >
+                    <Image 
+                      src="/imanage.svg" 
+                      alt="iManage" 
+                      width={16} 
+                      height={16}
+                    />
+                    <span className="text-sm font-medium text-neutral-900">iManage</span>
+                  </button>
                   </div>
                 </div>
               </div>
@@ -945,16 +1092,26 @@ export default function ReviewArtifactPanel({
                           cell.column.id === 'fileName' ? 'px-1' : 'px-3';
                         const isSelectColumn = cell.column.id === 'select';
                         return (
-                          <td
-                            key={cell.id}
-                            className={`${cellPadding} h-8 ${isRowSelected ? 'bg-[#FAFAF9]' : isRowHovered ? 'bg-neutral-50' : 'bg-white'} ${cell.column.id === 'forceMajeureClause' ? 'w-[325px]' : ''} ${cell.column.id === 'agreementParties' ? 'w-[325px]' : ''} ${cell.column.id === 'assignmentProvisionSummary' ? 'w-[325px]' : ''} ${cell.column.id !== table.getAllColumns()[0].id ? 'border-l border-[#ECEBE9]' : ''} ${cellIndex === row.getVisibleCells().length - 1 ? 'border-r border-[#ECEBE9]' : ''} ${row.index !== table.getRowModel().rows.length - 1 ? 'border-b border-[#ECEBE9]' : ''} relative overflow-hidden ${isSelectColumn ? 'cursor-pointer' : ''}`}
-                            style={{ 
-                              fontSize: '12px', 
-                              lineHeight: '16px',
-                              verticalAlign: getVerticalAlign(),
-                              width: cell.column.getSize()
-                            }}
-                          >
+                        <td
+                          key={cell.id}
+                          className={`${cellPadding} h-8 ${isRowSelected ? 'bg-[#FAFAF9]' : isRowHovered ? 'bg-neutral-50' : 'bg-white'} ${cell.column.id === 'forceMajeureClause' ? 'w-[325px]' : ''} ${cell.column.id === 'agreementParties' ? 'w-[325px]' : ''} ${cell.column.id === 'assignmentProvisionSummary' ? 'w-[325px]' : ''} ${cell.column.id !== table.getAllColumns()[0].id ? 'border-l border-[#ECEBE9]' : ''} ${cellIndex === row.getVisibleCells().length - 1 ? 'border-r border-[#ECEBE9]' : ''} ${row.index !== table.getRowModel().rows.length - 1 ? 'border-b border-[#ECEBE9]' : ''} relative overflow-hidden ${isSelectColumn ? 'cursor-pointer' : ''}`}
+                          style={{ 
+                            fontSize: '12px', 
+                            lineHeight: '16px',
+                            verticalAlign: getVerticalAlign(),
+                            width: cell.column.getSize()
+                          }}
+                        >
+                          {/* Active border overlay for fileName cell */}
+                          {cell.column.id === 'fileName' && manageGroupedFilesRowId === row.original.id && (
+                            <div 
+                              className="absolute inset-0 pointer-events-none border-neutral-900 rounded-md"
+                              style={{ 
+                                border: '1.5px solid',
+                                borderRadius: '6px'
+                              }}
+                            />
+                          )}
                           <AnimatedCell
                             rowIndex={rowIndex}
                             columnIndex={cellIndex}
@@ -990,6 +1147,34 @@ export default function ReviewArtifactPanel({
         isOpen={exportReviewDialogOpen}
         onClose={() => onExportReviewDialogOpenChange(false)}
         artifactTitle={selectedArtifact?.title || 'Artifact'}
+      />
+      <IManageFilePickerDialog
+        isOpen={iManageDialogOpen}
+        onClose={() => setIManageDialogOpen(false)}
+        onFilesSelected={(files) => {
+          onFilesSelected?.(files);
+        }}
+      />
+      
+      {/* Action Bar */}
+      <ReviewTableActionBar
+        selectedCount={selectedRows.size}
+        onClearSelection={clearSelection}
+        onAssignTo={() => console.log('Assign to')}
+        onGroupFiles={handleGroupFiles}
+        onOpenInAssistant={() => console.log('Open in Assistant')}
+        onDelete={() => console.log('Delete')}
+        onExport={() => console.log('Export')}
+      />
+      
+      {/* Manage Grouped Files Popover */}
+      <ManageGroupedFilesPopover
+        isOpen={manageGroupedFilesRowId !== null}
+        onClose={() => {
+          setManageGroupedFilesRowId(null);
+          setManageGroupedFilesAnchor(null);
+        }}
+        anchorElement={manageGroupedFilesAnchor}
       />
     </>
   );

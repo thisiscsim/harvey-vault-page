@@ -8,6 +8,15 @@ import ShareArtifactDialog from "@/components/share-artifact-dialog";
 import ExportReviewDialog from "@/components/export-review-dialog";
 import { toast } from "sonner";
 
+interface SelectedFile {
+  id: string;
+  name: string;
+  type: 'folder' | 'file';
+  modifiedDate: string;
+  size?: string;
+  path: string;
+}
+
 export default function ReviewGridPage() {
   const [selectedArtifact, setSelectedArtifact] = useState<{ title: string; subtitle: string }>({
     title: 'New review table',
@@ -17,7 +26,8 @@ export default function ReviewGridPage() {
   const [editedArtifactTitle, setEditedArtifactTitle] = useState(selectedArtifact.title);
   const [shareArtifactDialogOpen, setShareArtifactDialogOpen] = useState(false);
   const [exportReviewDialogOpen, setExportReviewDialogOpen] = useState(false);
-  const [isEmpty] = useState(true); // Start with empty state - setIsEmpty would be used when documents are uploaded
+  const [selectedFiles, setSelectedFiles] = useState<SelectedFile[]>([]);
+  const isEmpty = selectedFiles.length === 0;
   
   const artifactTitleInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -71,6 +81,15 @@ export default function ReviewGridPage() {
     window.history.back();
   };
 
+  const handleFilesSelected = (files: SelectedFile[]) => {
+    setSelectedFiles(files);
+    // Update subtitle to show file count
+    setSelectedArtifact(prev => ({
+      ...prev,
+      subtitle: `${files.length} ${files.length === 1 ? 'file' : 'files'}`
+    }));
+  };
+
   return (
     <div className="flex h-screen w-full">
       {/* Sidebar */}
@@ -96,6 +115,8 @@ export default function ReviewGridPage() {
             artifactTitleInputRef={artifactTitleInputRef}
             isEmpty={isEmpty}
             showBackButton={true}
+            selectedFiles={selectedFiles}
+            onFilesSelected={handleFilesSelected}
           />
         </div>
       </SidebarInset>
