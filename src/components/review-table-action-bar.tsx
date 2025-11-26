@@ -30,10 +30,10 @@ export default function ReviewTableActionBar({
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 100, opacity: 0 }}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
-          className="fixed left-1/2 -translate-x-1/2 z-50"
-          style={{ bottom: '24px' }}
+          className="fixed left-1/2 -translate-x-1/2 z-50 px-6"
+          style={{ bottom: '24px', maxWidth: 'calc(100vw - 48px)' }}
         >
-          <div className="bg-neutral-900 text-white rounded-lg shadow-2xl flex items-center gap-1" style={{ padding: '4px' }}>
+          <div className="bg-neutral-900 text-white rounded-lg shadow-2xl flex items-center gap-1 w-max" style={{ padding: '4px' }}>
             {/* Selection count and clear button */}
             <button
               onClick={onClearSelection}

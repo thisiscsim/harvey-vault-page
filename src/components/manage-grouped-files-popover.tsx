@@ -1,23 +1,54 @@
 "use client";
 
-import { X } from "lucide-react";
+import { X, Trash2, Plus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 
 interface ManageGroupedFilesPopoverProps {
   isOpen: boolean;
   onClose: () => void;
   anchorElement: HTMLElement | null;
-  groupedFiles?: Array<{ name: string; id: string }>;
+  parentFileName: string;
+  groupedCount: number;
+  onRemoveFile?: (index: number) => void;
 }
+
+// Helper function to get file icon based on extension
+const getFileIcon = (fileName: string) => {
+  const extension = fileName.split('.').pop()?.toLowerCase();
+  
+  switch (extension) {
+    case 'pdf':
+      return '/pdf-icon.svg';
+    case 'docx':
+    case 'doc':
+      return '/docx-icon.svg';
+    case 'xlsx':
+    case 'xls':
+      return '/xlsx-icon.svg';
+    case 'txt':
+    default:
+      return '/file.svg';
+  }
+};
 
 export default function ManageGroupedFilesPopover({
   isOpen,
   onClose,
   anchorElement,
-  groupedFiles = [],
+  parentFileName,
+  groupedCount,
+  onRemoveFile,
 }: ManageGroupedFilesPopoverProps) {
   const popoverRef = useRef<HTMLDivElement>(null);
+  const [hoveredFileIndex, setHoveredFileIndex] = useState<number | null>(null);
+  
+  // Generate mock grouped files based on parent filename
+  const groupedFiles = Array.from({ length: groupedCount }, (_, i) => ({
+    id: `grouped-${i}`,
+    name: `${parentFileName.replace('.pdf', '')} - Amendment ${i + 1}.pdf`
+  }));
 
   // Close on click outside
   useEffect(() => {
@@ -70,11 +101,53 @@ export default function ManageGroupedFilesPopover({
             </button>
           </div>
 
-          {/* Content - placeholder for now */}
-          <div className="p-4">
-            <p className="text-sm text-neutral-500">
-              Manage grouped files functionality coming soon...
-            </p>
+          {/* Content - Grouped Files List */}
+          <div className="py-2">
+            {/* Grouped Files */}
+            {groupedFiles.map((file, index) => (
+              <div 
+                key={file.id}
+                className="flex items-center gap-2 px-4 py-2 hover:bg-neutral-50 transition-colors cursor-pointer"
+                onMouseEnter={() => setHoveredFileIndex(index)}
+                onMouseLeave={() => setHoveredFileIndex(null)}
+              >
+                {/* File icon and name */}
+                <Image 
+                  src={getFileIcon(file.name)} 
+                  alt="File" 
+                  width={16} 
+                  height={16}
+                  className="flex-shrink-0"
+                />
+                <span className="text-sm text-neutral-900 flex-1 truncate">{file.name}</span>
+                
+                {/* Delete button - always reserve space */}
+                <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
+                  {hoveredFileIndex === index && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRemoveFile?.(index);
+                      }}
+                      className="p-1 hover:bg-neutral-200 rounded transition-colors text-neutral-600"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+            
+            {/* Add files button */}
+            <div className="px-4 pt-2 pb-2">
+              <button
+                onClick={() => console.log('Add files to group')}
+                className="flex items-center gap-1.5 px-2 py-1.5 border border-neutral-200 rounded-md hover:bg-neutral-50 transition-colors text-neutral-700 text-sm font-normal w-full justify-center"
+              >
+                <Plus size={14} />
+                <span>Add files</span>
+              </button>
+            </div>
           </div>
         </motion.div>
       )}

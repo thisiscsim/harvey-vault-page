@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { UserPlus, Download, GripVertical, ArrowLeft, Layers, UserPlus as UserPlusIcon } from "lucide-react";
+import { UserPlus, Download, GripVertical, ArrowLeft, Layers, UserPlus as UserPlusIcon, Table2 } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -564,26 +564,32 @@ export default function ReviewArtifactPanel({
                 <div 
                   className='absolute right-0 flex items-center gap-0.5 bg-white rounded-md p-0.5 shadow-md border border-neutral-200'
                 >
-                  {hasGroupedFiles && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
+                  {/* Create group or Manage grouped files button */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (hasGroupedFiles) {
+                            // Open manage grouped files popover
                             setManageGroupedFilesRowId(row.original.id);
                             setManageGroupedFilesAnchor(e.currentTarget.closest('td'));
-                          }}
-                          className='p-1.5 hover:bg-neutral-100 rounded transition-colors text-neutral-700'
-                        >
-                          <Layers size={14} />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Manage grouped files</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  )}
+                          } else {
+                            // Select the row checkbox
+                            toggleRowSelection(row.original.id);
+                          }
+                        }}
+                        className='p-1.5 hover:bg-neutral-100 rounded transition-colors text-neutral-700'
+                      >
+                        <Layers size={14} />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{hasGroupedFiles ? 'Manage grouped files' : 'Create group'}</p>
+                    </TooltipContent>
+                  </Tooltip>
                   
+                  {/* Assign button */}
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <button
@@ -872,19 +878,24 @@ export default function ReviewArtifactPanel({
               
               {/* Add file row */}
               <div className="border-b border-[#ECEBE9] bg-white hover:bg-neutral-50 transition-colors">
-                <div className="flex items-center">
+                <div className="flex items-center" style={{ height: '32px' }}>
                   {/* Plus icon in checkbox column */}
-                  <div className="w-[48px] h-10 flex items-center justify-center border-r border-[#ECEBE9] flex-shrink-0">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M8 1V15M1 8H15" stroke="#706D66" strokeWidth="1.5" strokeLinecap="round"/>
+                  <div className="w-[48px] h-full flex items-center justify-center border-r border-[#ECEBE9] flex-shrink-0">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M6 1V11M1 6H11" stroke="#706D66" strokeWidth="1.5" strokeLinecap="round"/>
                     </svg>
                   </div>
                   
                   {/* Add file text */}
-                  <div className="px-3 h-10 flex items-center" style={{ width: '220px' }}>
-                    <button className="flex items-center gap-1.5 text-neutral-600 hover:text-neutral-900 transition-colors">
-                      <FileIcon className="text-neutral-600" />
-                      <span className="text-sm font-normal">Add file</span>
+                  <div className="px-3 h-full flex items-center" style={{ width: '220px' }}>
+                    <button className="flex items-center gap-1.5 text-neutral-900 hover:text-neutral-700 transition-colors">
+                      <Image 
+                        src="/add-files-review.svg" 
+                        alt="Add file" 
+                        width={12} 
+                        height={12}
+                      />
+                      <span className="font-medium" style={{ fontSize: '12px' }}>Add file</span>
                     </button>
                   </div>
                 </div>
@@ -895,13 +906,7 @@ export default function ReviewArtifactPanel({
                 <div className="flex flex-col items-center" style={{ maxWidth: '420px' }}>
                   {/* Table Icon */}
                   <div className="mb-6">
-                    <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <rect x="6" y="6" width="36" height="36" rx="2" stroke="#A3A29D" strokeWidth="1.5"/>
-                      <line x1="6" y1="16" x2="42" y2="16" stroke="#A3A29D" strokeWidth="1.5"/>
-                      <line x1="6" y1="26" x2="42" y2="26" stroke="#A3A29D" strokeWidth="1.5"/>
-                      <line x1="16" y1="6" x2="16" y2="42" stroke="#A3A29D" strokeWidth="1.5"/>
-                      <line x1="26" y1="6" x2="26" y2="42" stroke="#A3A29D" strokeWidth="1.5"/>
-                    </svg>
+                    <Table2 size={24} className="text-neutral-400" strokeWidth={1.5} />
                   </div>
                   
                   {/* Heading */}
@@ -911,12 +916,15 @@ export default function ReviewArtifactPanel({
                   
                   {/* Description */}
                   <p className="text-sm text-neutral-500 text-center mb-6" style={{ lineHeight: '20px' }}>
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua
+                    Upload files to run multiple queries at once — analyze, compare, and extract insights with Harvey’s purpose-built platform.
                   </p>
                   
                   {/* Upload Button */}
-                  <button className="px-4 py-2 bg-neutral-900 text-white rounded-md hover:bg-neutral-800 transition-colors mb-4 font-medium text-sm">
-                    Upload documents
+                  <button 
+                    className="flex items-center justify-center gap-2 px-3 py-1.5 bg-neutral-900 text-white rounded-md hover:bg-neutral-800 transition-colors mb-4 text-sm font-normal"
+                    style={{ height: '32px' }}
+                  >
+                    Upload files
                   </button>
                   
                   {/* Divider Text */}
@@ -924,26 +932,32 @@ export default function ReviewArtifactPanel({
                   
                   {/* Integration Options */}
                   <div className="flex items-center gap-4">
-                    <button className="flex items-center gap-2 px-3 py-2 border border-neutral-200 rounded-md hover:bg-neutral-50 transition-colors">
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M8 0L9.856 5.472H15.648L10.896 8.856L12.752 14.328L8 10.944L3.248 14.328L5.104 8.856L0.352 5.472H6.144L8 0Z" fill="#00BCF2"/>
-                      </svg>
-                      <span className="text-sm font-medium text-neutral-900">SharePoint</span>
-                      <span className="text-xs text-neutral-500">(OneDrive)</span>
+                    <button 
+                      className="flex items-center gap-2 px-3 py-1.5 border border-neutral-200 rounded-md bg-white hover:bg-neutral-100 transition-colors text-neutral-900 text-sm font-normal"
+                      style={{ height: '32px' }}
+                    >
+                      <Image 
+                        src="/folder-vault-outline.svg" 
+                        alt="Vault" 
+                        width={16} 
+                        height={16}
+                      />
+                      <span>Add from Vault</span>
                     </button>
                     
-                  <button 
-                    onClick={() => setIManageDialogOpen(true)}
-                    className="flex items-center gap-2 px-3 py-2 border border-neutral-200 rounded-md hover:bg-neutral-50 transition-colors"
-                  >
-                    <Image 
-                      src="/imanage.svg" 
-                      alt="iManage" 
-                      width={16} 
-                      height={16}
-                    />
-                    <span className="text-sm font-medium text-neutral-900">iManage</span>
-                  </button>
+                    <button 
+                      onClick={() => setIManageDialogOpen(true)}
+                      className="flex items-center gap-2 px-3 py-1.5 border border-neutral-200 rounded-md bg-white hover:bg-neutral-100 transition-colors text-neutral-900 text-sm font-normal"
+                      style={{ height: '32px' }}
+                    >
+                      <Image 
+                        src="/imanage.svg" 
+                        alt="iManage" 
+                        width={16} 
+                        height={16}
+                      />
+                      <span>Add from iManage</span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -1168,14 +1182,26 @@ export default function ReviewArtifactPanel({
       />
       
       {/* Manage Grouped Files Popover */}
-      <ManageGroupedFilesPopover
-        isOpen={manageGroupedFilesRowId !== null}
-        onClose={() => {
-          setManageGroupedFilesRowId(null);
-          setManageGroupedFilesAnchor(null);
-        }}
-        anchorElement={manageGroupedFilesAnchor}
-      />
+      {manageGroupedFilesRowId !== null && (
+        <ManageGroupedFilesPopover
+          isOpen={true}
+          onClose={() => {
+            setManageGroupedFilesRowId(null);
+            setManageGroupedFilesAnchor(null);
+          }}
+          anchorElement={manageGroupedFilesAnchor}
+          parentFileName={
+            data.find(row => row.id === manageGroupedFilesRowId)?.fileName || ''
+          }
+          groupedCount={
+            data.find(row => row.id === manageGroupedFilesRowId)?.groupedCount || 0
+          }
+          onRemoveFile={(index) => {
+            console.log('Remove file at index:', index);
+            // TODO: Implement remove file from group
+          }}
+        />
+      )}
     </>
   );
 }
