@@ -10,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { UserPlus, Download, ArrowLeft, X, Plus, ListPlus, Settings2, Wand, Copy, SquarePen, RotateCcw, ThumbsUp, ThumbsDown } from "lucide-react";
+import { UserPlus, Download, ArrowLeft, X, ListPlus, Copy, SquarePen, RotateCcw, ThumbsUp, ThumbsDown, Scale, Paperclip, Mic, SlidersHorizontal, CornerDownLeft, AudioLines } from "lucide-react";
 import SourcesDrawer from "@/components/sources-drawer";
 import ShareThreadDialog from "@/components/share-thread-dialog";
 import ShareArtifactDialog from "@/components/share-artifact-dialog";
@@ -566,7 +566,7 @@ export default function AssistantChatPage({
       const textarea = document.querySelector('textarea');
       if (textarea) {
         textarea.style.height = 'auto';
-        textarea.style.height = '60px'; // Reset to minHeight
+        textarea.style.height = '32px'; // Reset to minHeight
       }
       
       // Determine artifact type using weighted keyword scoring
@@ -851,8 +851,8 @@ export default function AssistantChatPage({
       <AppSidebar />
       
       {/* Main Content */}
-      <SidebarInset>
-        <div ref={containerRef} className="h-screen flex text-sm" style={{ fontSize: '14px', lineHeight: '20px' }}>
+      <SidebarInset className="overflow-hidden">
+        <div ref={containerRef} className="h-screen flex text-sm bg-white rounded-[12px]" style={{ fontSize: '14px', lineHeight: '20px' }}>
           {/* AI Chat Interface - Left Panel */}
           <AnimatePresence mode="wait">
             {chatOpen && (
@@ -860,7 +860,7 @@ export default function AssistantChatPage({
                 key="chat-panel"
                 initial={isChatToggling ? { width: 0, opacity: 0 } : false}
                 animate={isResizing ? undefined : { 
-                  width: anyArtifactPanelOpen ? chatWidth : (sourcesDrawerOpen ? 'calc(100% - 400px)' : '100%'),
+                  width: anyArtifactPanelOpen ? chatWidth : '100%',
                   opacity: 1
                 }}
                 exit={{ width: 0, opacity: 0 }}
@@ -1285,97 +1285,94 @@ export default function AssistantChatPage({
               }
             }}
           >
-            <div className="mx-auto" style={{ maxWidth: '832px' }}>
-              <div className="pl-2 pr-3 pt-4 pb-3 transition-all duration-200 border border-transparent focus-within:border-neutral-300 bg-neutral-100 flex flex-col" style={{ borderRadius: '12px', minHeight: '160px' }}>
-              {/* Textarea */}
-              <textarea
-                value={inputValue}
-                onChange={(e) => {
-                  setInputValue(e.target.value);
-                  // Auto-resize textarea
-                  e.target.style.height = 'auto';
-                  e.target.style.height = e.target.scrollHeight + 'px';
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey && !isLoading) {
-                    e.preventDefault();
-                    sendMessage();
-                  }
-                }}
-                placeholder="Request a revision or ask a question..."
-                className="w-full bg-transparent focus:outline-none text-neutral-900 placeholder-neutral-500 resize-none overflow-hidden flex-1 px-2"
-                style={{ 
-                  fontSize: '14px', 
-                  lineHeight: '20px',
-                  minHeight: '60px',
-                  maxHeight: '300px'
-                }}
-              />
-              
-              {/* Controls Row */}
-              <div className="flex items-center justify-between mt-3" data-artifact-open={anyArtifactPanelOpen}>
-                {/* Left Controls */}
-                                  <div className="flex items-center">
-                    {/* Files and sources */}
+            <div className="mx-auto" style={{ maxWidth: '732px' }}>
+              <div className="px-4 py-3 transition-all duration-200 bg-neutral-100 border border-neutral-200 focus-within:border-neutral-300 flex flex-col" style={{ borderRadius: '12px' }}>
+                {/* Textarea */}
+                <textarea
+                  value={inputValue}
+                  onChange={(e) => {
+                    setInputValue(e.target.value);
+                    // Auto-resize textarea
+                    e.target.style.height = '32px';
+                    e.target.style.height = Math.max(32, e.target.scrollHeight) + 'px';
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey && !isLoading) {
+                      e.preventDefault();
+                      sendMessage();
+                    }
+                  }}
+                  placeholder="Ask Harvey. Use @ for sources and attached files."
+                  className="w-full bg-transparent focus:outline-none text-neutral-900 placeholder-neutral-400 resize-none overflow-hidden"
+                  style={{ 
+                    fontSize: '16px', 
+                    lineHeight: '24px',
+                    height: '32px',
+                    minHeight: '32px',
+                    maxHeight: '300px'
+                  }}
+                />
+                
+                {/* Controls Row */}
+                <div className="flex items-center justify-between mt-3">
+                  {/* Left Controls - Icon buttons */}
+                  <div className="flex items-center gap-1">
+                    <button 
+                      className="w-9 h-9 flex items-center justify-center text-neutral-500 hover:text-neutral-700 border border-neutral-300 rounded-lg hover:border-neutral-400 transition-colors"
+                    >
+                      <Scale size={18} />
+                    </button>
                     <button 
                       onClick={() => setIsFileManagementOpen(true)}
-                      className={`flex items-center gap-1.5 h-8 px-2 text-neutral-600 hover:text-neutral-800 hover:bg-neutral-200 rounded-md transition-colors`}
+                      className="w-9 h-9 flex items-center justify-center text-neutral-500 hover:text-neutral-700 border border-neutral-300 rounded-lg hover:border-neutral-400 transition-colors"
                     >
-                      <Plus size={16} />
-                      {!anyArtifactPanelOpen && <span className="text-sm font-normal">Files and sources</span>}
+                      <Paperclip size={18} />
                     </button>
+                  </div>
                   
-                  {/* Prompts */}
-                  <button className={`flex items-center gap-1.5 h-8 px-2 text-neutral-600 hover:text-neutral-800 hover:bg-neutral-200 rounded-md transition-colors`}>
-                    <ListPlus size={16} />
-                    {!anyArtifactPanelOpen && <span className="text-sm font-normal">Prompts</span>}
-                  </button>
-                  
-                  {/* Divider */}
-                  <div className="w-px bg-neutral-200" style={{ height: '20px', marginLeft: '4px', marginRight: '4px' }}></div>
-                  
-                  {/* Customize */}
-                  <button className={`flex items-center gap-1.5 h-8 px-2 text-neutral-600 hover:text-neutral-800 hover:bg-neutral-200 rounded-md transition-colors`}>
-                    <Settings2 size={16} />
-                    {!anyArtifactPanelOpen && <span className="text-sm font-normal">Customize</span>}
-                  </button>
-                  
-                  {/* Improve */}
-                  <button className={`flex items-center gap-1.5 h-8 px-2 text-neutral-600 hover:text-neutral-800 hover:bg-neutral-200 rounded-md transition-colors`}>
-                    <Wand size={16} />
-                    {!anyArtifactPanelOpen && <span className="text-sm font-normal">Improve</span>}
-                  </button>
-                </div>
-                
-                {/* Right Controls */}
-                <div className="flex items-center space-x-2">
-                  {/* Send Button */}
-                  <button
-                    onClick={() => sendMessage()}
-                    disabled={!inputValue.trim() || isLoading}
-                    className={`p-2 focus:outline-none flex items-center justify-center transition-all bg-neutral-900 text-neutral-0 hover:bg-neutral-800 ${
-                      !inputValue.trim() || isLoading ? 'cursor-not-allowed' : ''
-                    }`}
-                    style={{ 
-                      minWidth: '32px', 
-                      minHeight: '32px',
-                      borderRadius: '6px',
-                      opacity: !inputValue.trim() || isLoading ? 0.3 : 1
-                    }}
-                  >
+                  {/* Right Controls */}
+                  <div className="flex items-center gap-2">
+                    {/* Ghost icon buttons container */}
+                    <div className="flex items-center">
+                      <button className="w-9 h-9 flex items-center justify-center text-neutral-500 hover:text-neutral-700 hover:bg-neutral-200 rounded-lg transition-colors">
+                        <Mic size={18} />
+                      </button>
+                      <button className="w-9 h-9 flex items-center justify-center text-neutral-500 hover:text-neutral-700 hover:bg-neutral-200 rounded-lg transition-colors">
+                        <SlidersHorizontal size={18} />
+                      </button>
+                      <button className="w-9 h-9 flex items-center justify-center text-neutral-500 hover:text-neutral-700 hover:bg-neutral-200 rounded-lg transition-colors">
+                        <ListPlus size={18} />
+                      </button>
+                    </div>
+                    
+                    {/* Dynamic Submit/Voice Button */}
                     {isLoading ? (
-                      <div className="w-4 h-4 flex items-center justify-center">
+                      <button
+                        disabled
+                        className="h-9 flex items-center justify-center bg-neutral-900 text-white rounded-lg transition-all cursor-not-allowed"
+                        style={{ width: '44px' }}
+                      >
                         <Spinner size="sm" />
-                      </div>
+                      </button>
+                    ) : inputValue.trim() ? (
+                      <button
+                        onClick={() => sendMessage()}
+                        className="h-9 flex items-center justify-center bg-neutral-900 text-white rounded-lg hover:bg-neutral-800 transition-all"
+                        style={{ width: '44px' }}
+                      >
+                        <CornerDownLeft size={18} />
+                      </button>
                     ) : (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M5 12h14M12 5l7 7-7 7"/>
-                      </svg>
+                      <button
+                        className="h-9 flex items-center justify-center bg-neutral-200 text-neutral-700 rounded-lg hover:bg-neutral-300 transition-all"
+                        style={{ width: '44px' }}
+                      >
+                        <AudioLines size={20} />
+                      </button>
                     )}
-                  </button>
+                  </div>
                 </div>
               </div>
-            </div>
             </div>
           </motion.div>
         </div>
@@ -1414,45 +1411,35 @@ export default function AssistantChatPage({
       )}
       </AnimatePresence>
       
-      {/* Sources Panel - Shows as second panel when artifact is closed */}
-      <AnimatePresence>
-                  {sourcesDrawerOpen && !anyArtifactPanelOpen && (
-          <motion.div 
-            initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 400, opacity: 1 }}
-            exit={{ width: 0, opacity: 0 }}
-            transition={{
-              width: PANEL_ANIMATION,
-              opacity: { duration: 0.15, ease: "easeOut" }
-            }}
-            className="h-full bg-white border-l border-neutral-200 flex flex-col overflow-hidden"
-            style={{ 
-              flexShrink: 0
-            }}
-          >
-            {/* Header */}
-            <div className="px-3 py-4 border-b border-neutral-200 flex items-center justify-between" style={{ height: '52px' }}>
-              <p className="text-neutral-900 font-medium truncate mr-4">Sources</p>
-              <button
-                onClick={() => setSourcesDrawerOpen(false)}
-                className="p-2 hover:bg-neutral-100 rounded-md transition-colors"
-              >
-                <X size={16} className="text-neutral-600" />
-              </button>
-            </div>
-            
-            {/* Sources Content */}
-            <SourcesDrawer 
-              isOpen={true} 
-              onClose={() => setSourcesDrawerOpen(false)}
-              variant="panel"
-              isLoading={isLoading}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Share Dialogs */}
+      <ShareThreadDialog 
+        isOpen={shareThreadDialogOpen} 
+        onClose={() => setShareThreadDialogOpen(false)} 
+      />
+      <ShareArtifactDialog 
+        isOpen={shareArtifactDialogOpen} 
+        onClose={() => setShareArtifactDialogOpen(false)} 
+        artifactTitle={selectedArtifact?.title || "Artifact"}
+      />
       
-      {/* Unified Artifact Panel - Right Panel */}
+      {/* Export Dialogs */}
+      <ExportThreadDialog 
+        isOpen={exportThreadDialogOpen} 
+        onClose={() => setExportThreadDialogOpen(false)} 
+      />
+      <ExportReviewDialog 
+        isOpen={exportReviewDialogOpen} 
+        onClose={() => setExportReviewDialogOpen(false)} 
+        artifactTitle={selectedArtifact?.title || "Review"}
+      />
+      <FileManagementDialog 
+        isOpen={isFileManagementOpen} 
+        onClose={() => setIsFileManagementOpen(false)} 
+      />
+        </div>
+      </SidebarInset>
+      
+      {/* Unified Artifact Panel - Separate floating panel */}
       <AnimatePresence>
         {unifiedArtifactPanelOpen && currentArtifactType && (
           <>
@@ -1513,7 +1500,7 @@ export default function AssistantChatPage({
         )}
       </AnimatePresence>
 
-      {/* Legacy Artifact Panel - For backward compatibility */}
+      {/* Legacy Artifact Panel - Separate floating panel */}
       <AnimatePresence>
         {artifactPanelOpen && (
           <ReviewArtifactPanel
@@ -1540,10 +1527,10 @@ export default function AssistantChatPage({
           />
         )}
       </AnimatePresence>
-      
-      {/* Sources Panel - Shows as third panel when artifact is open and above 2xl */}
+
+      {/* Sources Panel - Separate floating panel */}
       <AnimatePresence>
-        {sourcesDrawerOpen && (artifactPanelOpen || draftArtifactPanelOpen || reviewArtifactPanelOpen) && isAbove2xl && (
+        {sourcesDrawerOpen && (
           <motion.div 
             initial={{ width: 0, opacity: 0 }}
             animate={{ width: 400, opacity: 1 }}
@@ -1552,13 +1539,13 @@ export default function AssistantChatPage({
               width: PANEL_ANIMATION,
               opacity: { duration: 0.15, ease: "easeOut" }
             }}
-            className="h-full bg-white border-l border-neutral-200 flex flex-col overflow-hidden"
+            className="bg-white rounded-[12px] shadow-[0_0_0_1px_rgba(0,0,0,0.03),0_1px_2px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.04)] flex flex-col overflow-hidden m-2 ml-0"
             style={{ 
               flexShrink: 0
             }}
           >
             {/* Header */}
-            <div className="px-3 py-4 border-b border-neutral-200 flex items-center justify-between" style={{ height: '52px' }}>
+            <div className="px-4 py-4 flex items-center justify-between" style={{ height: '52px' }}>
               <p className="text-neutral-900 font-medium truncate mr-4">Sources</p>
               <button
                 onClick={() => setSourcesDrawerOpen(false)}
@@ -1578,46 +1565,6 @@ export default function AssistantChatPage({
           </motion.div>
         )}
       </AnimatePresence>
-      
-      {/* Sources Drawer - Sheet variant when artifact panel is open and below 2xl */}
-      <AnimatePresence>
-        {(artifactPanelOpen || draftArtifactPanelOpen || reviewArtifactPanelOpen) && !isAbove2xl && (
-          <SourcesDrawer 
-            isOpen={sourcesDrawerOpen} 
-            onClose={() => setSourcesDrawerOpen(false)}
-            variant="sheet"
-            isLoading={isLoading}
-          />
-        )}
-      </AnimatePresence>
-      
-      {/* Share Dialogs */}
-      <ShareThreadDialog 
-        isOpen={shareThreadDialogOpen} 
-        onClose={() => setShareThreadDialogOpen(false)} 
-      />
-      <ShareArtifactDialog 
-        isOpen={shareArtifactDialogOpen} 
-        onClose={() => setShareArtifactDialogOpen(false)} 
-        artifactTitle={selectedArtifact?.title || "Artifact"}
-      />
-      
-      {/* Export Dialogs */}
-      <ExportThreadDialog 
-        isOpen={exportThreadDialogOpen} 
-        onClose={() => setExportThreadDialogOpen(false)} 
-      />
-      <ExportReviewDialog 
-        isOpen={exportReviewDialogOpen} 
-        onClose={() => setExportReviewDialogOpen(false)} 
-        artifactTitle={selectedArtifact?.title || "Review"}
-      />
-      <FileManagementDialog 
-        isOpen={isFileManagementOpen} 
-        onClose={() => setIsFileManagementOpen(false)} 
-      />
-        </div>
-      </SidebarInset>
     </div>
   );
 } 

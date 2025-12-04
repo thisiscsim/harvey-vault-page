@@ -15,8 +15,8 @@ export default function PersonalProjectPage() {
       <AppSidebar />
       
       {/* Main Content */}
-      <SidebarInset>
-        <div className="h-screen flex flex-col bg-white">
+      <SidebarInset className="overflow-hidden">
+        <div className="h-screen flex flex-col bg-white rounded-[12px]">
           {/* Header with back button */}
           <div 
             className="px-3 py-4 flex items-center" 

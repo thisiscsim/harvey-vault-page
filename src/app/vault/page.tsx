@@ -97,8 +97,8 @@ export default function VaultPage() {
       <AppSidebar />
       
       {/* Main Content */}
-              <SidebarInset>
-          <div className="h-screen flex flex-col bg-white">
+              <SidebarInset className="overflow-hidden">
+          <div className="h-screen flex flex-col bg-white rounded-[12px]">
             <div className="w-full xl:max-w-[1500px] xl:mx-auto flex flex-col h-full px-10">
               {/* Header */}
             <div className="pb-0" style={{ paddingTop: '40px' }}>

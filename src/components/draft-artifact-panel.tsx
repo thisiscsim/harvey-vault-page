@@ -121,10 +121,10 @@ export default function DraftArtifactPanel({
           width: PANEL_ANIMATION,
           opacity: { duration: 0.15, ease: "easeOut" }
         }}
-        className="flex-1 flex flex-col bg-neutral-50 overflow-hidden"
+        className="flex-1 flex flex-col bg-white rounded-[12px] shadow-[0_0_0_1px_rgba(0,0,0,0.03),0_1px_2px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.04)] overflow-hidden m-2 ml-0"
       >
         {/* Header */}
-        <div className="px-3 py-4 border-b border-neutral-200 bg-neutral-0 flex items-center justify-between" style={{ height: '52px' }}>
+        <div className="px-4 py-4 bg-white flex items-center justify-between" style={{ height: '52px' }}>
           <div className="flex items-center">
             {/* Editable Artifact Title */}
             {isEditingArtifactTitle ? (

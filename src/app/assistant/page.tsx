@@ -6,7 +6,7 @@ import { motion } from "motion/react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset } from "@/components/ui/sidebar";
 
-import { Plus, FileText, Table2, Settings2, ListPlus, Wand, Orbit, Search } from "lucide-react";
+import { Plus, FileText, Table2, Settings2, ListPlus, Wand, Orbit, Search, Scale, Paperclip, Mic, SlidersHorizontal, CornerDownLeft, AudioLines } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Spinner } from "@/components/ui/spinner";
 import { Input } from "@/components/ui/input";
@@ -203,8 +203,8 @@ export default function AssistantHomePage() {
       <AppSidebar />
       
       {/* Main Content */}
-      <SidebarInset className="flex-1">
-        <div className="h-screen overflow-y-auto bg-neutral-0" id="main-content">
+      <SidebarInset className="flex-1 overflow-hidden">
+        <div className="h-screen overflow-y-auto bg-white rounded-[12px]" id="main-content">
           <div 
             className="flex flex-col"
             style={{
@@ -220,7 +220,7 @@ export default function AssistantHomePage() {
               }}
             >
               <div className="px-6 py-4 w-full" ref={topContentRef}>
-              <div className="mx-auto" style={{ maxWidth: '832px' }}>
+              <div className="mx-auto" style={{ maxWidth: '732px' }}>
                 {/* Harvey Logo/Title */}
                 <div className="text-center mb-5">
                   <Image 
@@ -235,7 +235,7 @@ export default function AssistantHomePage() {
 
                 {/* Action Buttons */}
                 <div className="flex gap-3 justify-center mb-5">
-                  <button className="py-1 pl-1 pr-3 bg-white border border-neutral-200 rounded-md hover:border-neutral-300 transition-colors flex items-center gap-2" style={{ width: '220px' }}>
+                  <button className="py-1 pl-1 pr-3 bg-white border border-neutral-200 rounded-md hover:border-neutral-300 transition-colors flex items-center gap-2">
                     <div className="p-1.5 bg-neutral-100 rounded-sm">
                       <FileText size={16} style={{ color: '#3B7EA1' }} />
                     </div>
@@ -244,8 +244,7 @@ export default function AssistantHomePage() {
                   
                   <button 
                     onClick={() => router.push('/review-grid')}
-                    className="py-1 pl-1 pr-3 bg-white border border-neutral-200 rounded-md hover:border-neutral-300 transition-colors flex items-center gap-2" 
-                    style={{ width: '220px' }}
+                    className="py-1 pl-1 pr-3 bg-white border border-neutral-200 rounded-md hover:border-neutral-300 transition-colors flex items-center gap-2"
                   >
                     <div className="p-1.5 bg-neutral-100 rounded-sm">
                       <Table2 size={16} style={{ color: '#3B7EA1' }} />
@@ -254,164 +253,135 @@ export default function AssistantHomePage() {
                   </button>
                 </div>
 
-                {/* Chat Input - Identical to chat page */}
-                <div className="pl-2 pr-3 pt-4 pb-3 transition-all duration-200 border border-transparent focus-within:border-neutral-300 bg-neutral-100 flex flex-col" style={{ borderRadius: '12px', minHeight: '160px' }}>
-                {/* Textarea */}
-                <textarea
-                  value={inputValue}
-                  onChange={(e) => {
-                    setInputValue(e.target.value);
-                    // Auto-resize textarea
-                    e.target.style.height = 'auto';
-                    e.target.style.height = e.target.scrollHeight + 'px';
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSendMessage();
-                    }
-                  }}
-                  placeholder="Ask Harvey anything..."
-                  className="w-full bg-transparent focus:outline-none text-neutral-900 placeholder-neutral-500 resize-none overflow-hidden flex-1 px-2"
-                  style={{ 
-                    fontSize: '14px', 
-                    lineHeight: '20px',
-                    minHeight: '60px',
-                    maxHeight: '300px'
-                  }}
-                />
-                
-                {/* Controls Row */}
-                <div className="flex items-center justify-between mt-3">
-                  {/* Left Controls */}
-                  <div className="flex items-center">
-                    {/* Files and sources */}
-                    <button 
-                      onClick={() => setIsFileManagementOpen(true)}
-                      className="flex items-center gap-1.5 h-8 px-2 text-neutral-600 hover:text-neutral-800 hover:bg-neutral-200 transition-colors" 
-                      style={{ borderRadius: '6px' }}
-                    >
-                      <Plus size={16} />
-                      <span className="text-sm font-normal">Files and sources</span>
-                    </button>
-                    
-                    {/* Prompts */}
-                    <button className="flex items-center gap-1.5 h-8 px-2 text-neutral-600 hover:text-neutral-800 hover:bg-neutral-200 transition-colors" style={{ borderRadius: '6px' }}>
-                      <ListPlus size={16} />
-                      <span className="text-sm font-normal">Prompts</span>
-                    </button>
-                    
-                    {/* Divider */}
-                    <div className="w-px bg-neutral-200" style={{ height: '20px', marginLeft: '4px', marginRight: '4px' }}></div>
-                    
-                    {/* Customize */}
-                    <button className="flex items-center gap-1.5 h-8 px-2 text-neutral-600 hover:text-neutral-800 hover:bg-neutral-200 transition-colors" style={{ borderRadius: '6px' }}>
-                      <Settings2 size={16} />
-                      <span className="text-sm font-normal">Customize</span>
-                    </button>
-                    
-                    {/* Improve */}
-                    <button className="flex items-center gap-1.5 h-8 px-2 text-neutral-600 hover:text-neutral-800 hover:bg-neutral-200 transition-colors" style={{ borderRadius: '6px' }}>
-                      <Wand size={16} />
-                      <span className="text-sm font-normal">Improve</span>
+                {/* Chat Input - Modern composer design */}
+                <div className="px-4 py-3 transition-all duration-200 bg-neutral-100 border border-neutral-200 focus-within:border-neutral-300 flex flex-col" style={{ borderRadius: '12px' }}>
+                  {/* Matter chip at top */}
+                  <div className="mb-3">
+                    <button className="px-2 py-1 text-neutral-700 border border-neutral-300 rounded-md hover:border-neutral-400 transition-colors" style={{ fontSize: '12px' }}>
+                      Matter
                     </button>
                   </div>
                   
-                  {/* Right Controls */}
-                  <div className="flex items-center space-x-1">
-                    {/* Deep Research */}
-                    <button 
-                      onClick={() => setIsDeepResearchActive(!isDeepResearchActive)}
-                      className={`flex items-center gap-1.5 h-8 px-2 transition-colors ${
-                        isDeepResearchActive 
-                          ? 'text-[#5F3BA5] bg-[#E7E6EA]' 
-                          : 'text-neutral-600 hover:text-neutral-800 hover:bg-neutral-200'
-                      }`}
-                      style={{ borderRadius: '6px' }}
-                    >
-                      <Orbit size={16} />
-                      <span className="text-sm font-normal">Deep Research</span>
-                    </button>
+                  {/* Textarea */}
+                  <textarea
+                    value={inputValue}
+                    onChange={(e) => {
+                      setInputValue(e.target.value);
+                      // Auto-resize textarea
+                      e.target.style.height = '32px';
+                      e.target.style.height = Math.max(32, e.target.scrollHeight) + 'px';
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage();
+                      }
+                    }}
+                    placeholder="Ask Harvey. Use @ for sources and attached files."
+                    className="w-full bg-transparent focus:outline-none text-neutral-900 placeholder-neutral-400 resize-none overflow-hidden"
+                    style={{ 
+                      fontSize: '16px', 
+                      lineHeight: '24px',
+                      height: '32px',
+                      minHeight: '32px',
+                      maxHeight: '300px'
+                    }}
+                  />
+                  
+                  {/* Controls Row */}
+                  <div className="flex items-center justify-between mt-3">
+                    {/* Left Controls - Icon buttons */}
+                    <div className="flex items-center gap-1">
+                      <button 
+                        className="w-9 h-9 flex items-center justify-center text-neutral-500 hover:text-neutral-700 border border-neutral-300 rounded-lg hover:border-neutral-400 transition-colors"
+                      >
+                        <Scale size={18} />
+                      </button>
+                      <button 
+                        onClick={() => setIsFileManagementOpen(true)}
+                        className="w-9 h-9 flex items-center justify-center text-neutral-500 hover:text-neutral-700 border border-neutral-300 rounded-lg hover:border-neutral-400 transition-colors"
+                      >
+                        <Paperclip size={18} />
+                      </button>
+                    </div>
                     
-                    {/* Ask Harvey Button */}
-                    <button
-                      onClick={handleSendMessage}
-                      disabled={!inputValue.trim() || isLoading}
-                      className={`focus:outline-none flex items-center justify-center transition-all bg-neutral-900 text-neutral-0 hover:bg-neutral-800 ${
-                        !inputValue.trim() || isLoading ? 'cursor-not-allowed' : ''
-                      } ${
-                        isLoading ? 'p-2' : 'px-4 py-1.5'
-                      }`}
-                      style={{ 
-                        minWidth: isLoading ? '32px' : undefined,
-                        minHeight: '32px',
-                        borderRadius: '6px',
-                        opacity: !inputValue.trim() || isLoading ? 0.3 : 1,
-                        fontSize: '14px',
-                        fontWeight: 500
-                      }}
-                    >
+                    {/* Right Controls */}
+                    <div className="flex items-center gap-2">
+                      {/* Ghost icon buttons container */}
+                      <div className="flex items-center">
+                        <button className="w-9 h-9 flex items-center justify-center text-neutral-500 hover:text-neutral-700 hover:bg-neutral-200 rounded-lg transition-colors">
+                          <Mic size={18} />
+                        </button>
+                        <button className="w-9 h-9 flex items-center justify-center text-neutral-500 hover:text-neutral-700 hover:bg-neutral-200 rounded-lg transition-colors">
+                          <SlidersHorizontal size={18} />
+                        </button>
+                        <button className="w-9 h-9 flex items-center justify-center text-neutral-500 hover:text-neutral-700 hover:bg-neutral-200 rounded-lg transition-colors">
+                          <ListPlus size={18} />
+                        </button>
+                      </div>
+                      
+                      {/* Dynamic Submit/Voice Button */}
                       {isLoading ? (
-                        <div className="w-4 h-4 flex items-center justify-center">
+                        <button
+                          disabled
+                          className="h-9 flex items-center justify-center bg-neutral-900 text-white rounded-lg transition-all cursor-not-allowed"
+                          style={{ width: '44px' }}
+                        >
                           <Spinner size="sm" />
-                        </div>
+                        </button>
+                      ) : inputValue.trim() ? (
+                        <button
+                          onClick={handleSendMessage}
+                          className="h-9 flex items-center justify-center bg-neutral-900 text-white rounded-lg hover:bg-neutral-800 transition-all"
+                          style={{ width: '44px' }}
+                        >
+                          <CornerDownLeft size={18} />
+                        </button>
                       ) : (
-                        'Ask Harvey'
+                        <button
+                          className="h-9 flex items-center justify-center bg-neutral-200 text-neutral-700 rounded-lg hover:bg-neutral-300 transition-all"
+                          style={{ width: '44px' }}
+                        >
+                          <AudioLines size={20} />
+                        </button>
                       )}
-                    </button>
+                    </div>
                   </div>
                 </div>
-              </div>
                 
               {/* Action Cards Section - Below Chatbox */}
               <div className="mt-3">
                 <div className="flex gap-3 justify-center flex-wrap mx-auto" style={{ maxWidth: '740px' }}>
-                  <button className="py-1 pl-1 pr-3 bg-white border border-neutral-200 rounded-md hover:border-neutral-300 transition-colors flex items-center gap-2">
-                    <div className="p-1.5 bg-neutral-100 rounded-sm">
-                      <Image src="/imanage.svg" alt="" width={16} height={16} style={{ width: '16px', height: '16px' }} />
-                    </div>
-                    <span className="text-neutral-900 text-sm font-medium">iManage</span>
-                    <Plus size={16} className="text-neutral-600" />
-                  </button>
-                  
-                  <button className="py-1 pl-1 pr-3 bg-white border border-neutral-200 rounded-md hover:border-neutral-300 transition-colors flex items-center gap-2">
-                    <div className="p-1.5 bg-neutral-100 rounded-sm">
+                  <button className="py-1 pl-1 pr-3 bg-white border border-neutral-200 rounded-md hover:border-neutral-300 transition-colors flex items-center gap-2" style={{ maxWidth: '150px' }}>
+                    <div className="p-1.5 bg-neutral-100 rounded-sm flex-shrink-0">
                       <Image src="/lexis.svg" alt="" width={16} height={16} style={{ width: '16px', height: '16px' }} />
                     </div>
-                    <span className="text-neutral-900 text-sm font-medium">LexisNexis</span>
-                    <Plus size={16} className="text-neutral-600" />
+                    <span className="text-neutral-900 text-sm font-medium truncate">LexisNexis</span>
+                    <Plus size={16} className="text-neutral-600 flex-shrink-0" />
                   </button>
                   
-                  <button className="py-1 pl-1 pr-3 bg-white border border-neutral-200 rounded-md hover:border-neutral-300 transition-colors flex items-center gap-2">
-                    <div className="p-1.5 bg-neutral-100 rounded-sm">
-                      <Image src="/globe.svg" alt="" width={16} height={16} style={{ width: '16px', height: '16px' }} />
-                    </div>
-                    <span className="text-neutral-900 text-sm font-medium">Web search</span>
-                    <Plus size={16} className="text-neutral-600" />
-                  </button>
-                  
-                  <button className="py-1 pl-1 pr-3 bg-white border border-neutral-200 rounded-md hover:border-neutral-300 transition-colors flex items-center gap-2">
-                    <div className="p-1.5 bg-neutral-100 rounded-sm">
+                  <button className="py-1 pl-1 pr-3 bg-white border border-neutral-200 rounded-md hover:border-neutral-300 transition-colors flex items-center gap-2" style={{ maxWidth: '150px' }}>
+                    <div className="p-1.5 bg-neutral-100 rounded-sm flex-shrink-0">
                       <Image src="/EDGAR.svg" alt="" width={16} height={16} style={{ width: '16px', height: '16px' }} />
                     </div>
-                    <span className="text-neutral-900 text-sm font-medium">EDGAR</span>
-                    <Plus size={16} className="text-neutral-600" />
+                    <span className="text-neutral-900 text-sm font-medium truncate">EDGAR</span>
+                    <Plus size={16} className="text-neutral-600 flex-shrink-0" />
                   </button>
                   
-                  <button className="py-1 pl-1 pr-3 bg-white border border-neutral-200 rounded-md hover:border-neutral-300 transition-colors flex items-center gap-2">
-                    <div className="p-1.5 bg-neutral-100 rounded-sm">
+                  <button className="py-1 pl-1 pr-3 bg-white border border-neutral-200 rounded-md hover:border-neutral-300 transition-colors flex items-center gap-2" style={{ maxWidth: '150px' }}>
+                    <div className="p-1.5 bg-neutral-100 rounded-sm flex-shrink-0">
                       <Image src="/folderIcon.svg" alt="" width={16} height={16} style={{ width: '16px', height: '16px' }} className="text-neutral-600" />
                     </div>
-                    <span className="text-neutral-900 text-sm font-medium">Amend v Delta IP Litigation</span>
-                    <Plus size={16} className="text-neutral-600" />
+                    <span className="text-neutral-900 text-sm font-medium truncate">Amend v Delta IP Litigation</span>
+                    <Plus size={16} className="text-neutral-600 flex-shrink-0" />
                   </button>
                   
-                  <button className="py-1 pl-1 pr-3 bg-white border border-neutral-200 rounded-md hover:border-neutral-300 transition-colors flex items-center gap-2">
-                    <div className="p-1.5 bg-neutral-100 rounded-sm">
+                  <button className="py-1 pl-1 pr-3 bg-white border border-neutral-200 rounded-md hover:border-neutral-300 transition-colors flex items-center gap-2" style={{ maxWidth: '150px' }}>
+                    <div className="p-1.5 bg-neutral-100 rounded-sm flex-shrink-0">
                       <Image src="/folderIcon.svg" alt="" width={16} height={16} style={{ width: '16px', height: '16px' }} className="text-neutral-600" />
                     </div>
-                    <span className="text-neutral-900 text-sm font-medium">Regulatory Compliance Audit</span>
-                    <Plus size={16} className="text-neutral-600" />
+                    <span className="text-neutral-900 text-sm font-medium truncate">Regulatory Compliance Audit</span>
+                    <Plus size={16} className="text-neutral-600 flex-shrink-0" />
                   </button>
                 </div>
               </div>
@@ -422,7 +392,7 @@ export default function AssistantHomePage() {
             
             {/* Workflow Cards Section */}
             <div 
-              className="w-full bg-neutral-0"
+              className="w-full bg-white"
               ref={workflowContainerRef}
             >
               <div className="xl:max-w-[1500px] xl:mx-auto px-10 pt-2 pb-12 relative">

@@ -65,14 +65,14 @@ export function AppSidebar() {
   }
   
   return (
-    <Sidebar collapsible="icon" className="relative border-r border-neutral-200" style={{ backgroundColor: 'white' }}>
+    <Sidebar collapsible="icon" className="relative border-r-0" style={{ backgroundColor: 'var(--sidebar)' }}>
       <SidebarHeader className={cn(
-        "p-0 relative bg-white",
+        "p-0 relative",
         state === "collapsed" && "group"
       )}>
         {/* Paul Weiss logo/avatar */}
         <div className={cn(
-          "flex items-center h-14 transition-colors bg-white",
+          "flex items-center h-14 transition-colors",
           state === "expanded" ? "px-[10px] gap-2" : "px-[6px] justify-center"
         )}>
           <div className="flex items-center gap-0.5 min-w-0 flex-1">
@@ -82,7 +82,7 @@ export function AppSidebar() {
               onMouseLeave={() => state === "collapsed" && setIsAvatarHovered(false)}
               className={cn(
                 "flex-shrink-0 w-[36px] h-[36px] rounded-md transition-colors flex items-center justify-center relative",
-                state === "collapsed" ? "hover:bg-neutral-100" : "hover:bg-neutral-100"
+                "hover:bg-sidebar-accent"
               )}
             >
               {state === "collapsed" && isAvatarHovered ? (
@@ -113,7 +113,7 @@ export function AppSidebar() {
           {state === "expanded" && (
             <button
               onClick={toggleSidebar}
-              className="flex-shrink-0 w-[36px] h-[36px] rounded-md hover:bg-neutral-100 transition-colors flex items-center justify-center"
+              className="flex-shrink-0 w-[36px] h-[36px] rounded-md hover:bg-sidebar-accent transition-colors flex items-center justify-center"
             >
               <PanelLeft className="w-4 h-4 text-neutral-600" />
             </button>
@@ -121,7 +121,7 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
       
-      <SidebarContent className="bg-white">
+      <SidebarContent>
         <SidebarGroup className="p-0">
           <SidebarGroupContent>
             <SidebarMenu className={cn(
