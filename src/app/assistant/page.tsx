@@ -235,21 +235,29 @@ export default function AssistantHomePage() {
 
                 {/* Action Buttons */}
                 <div className="flex gap-3 justify-center mb-5">
-                  <button className="py-1 pl-1 pr-3 bg-bg-base border border-border-base rounded-md hover:border-border-strong transition-colors flex items-center gap-2">
-                    <div className="p-1.5 bg-bg-subtle rounded-sm">
-                      <FileText size={16} style={{ color: '#3B7EA1' }} />
-                    </div>
-                    <p className="text-fg-base text-sm font-medium">Create draft document</p>
+                  <button className="py-1.5 px-3 bg-bg-base border border-border-base rounded-md hover:border-border-strong hover:bg-bg-subtle transition-colors flex items-center gap-[6px]">
+                    <SvgIcon 
+                      src="/central_icons/Draft.svg" 
+                      alt="Draft"
+                      width={16} 
+                      height={16} 
+                      className="text-fg-subtle"
+                    />
+                    <p className="text-fg-base text-sm font-medium">Compose draft</p>
                   </button>
                   
                   <button 
                     onClick={() => router.push('/review-grid')}
-                    className="py-1 pl-1 pr-3 bg-bg-base border border-border-base rounded-md hover:border-border-strong transition-colors flex items-center gap-2"
+                    className="py-1.5 px-3 bg-bg-base border border-border-base rounded-md hover:border-border-strong hover:bg-bg-subtle transition-colors flex items-center gap-[6px]"
                   >
-                    <div className="p-1.5 bg-bg-subtle rounded-sm">
-                      <Table2 size={16} style={{ color: '#3B7EA1' }} />
-                    </div>
-                    <span className="text-fg-base text-sm font-medium">Create review grid</span>
+                    <SvgIcon 
+                      src="/central_icons/Review.svg" 
+                      alt="Review"
+                      width={16} 
+                      height={16} 
+                      className="text-fg-subtle"
+                    />
+                    <span className="text-fg-base text-sm font-medium">Run extraction</span>
                   </button>
                 </div>
 
@@ -367,7 +375,7 @@ export default function AssistantHomePage() {
                         delay: 0.3 + index * 0.08,
                         ease: [0.25, 0.46, 0.45, 0.94]
                       }}
-                      className="py-1.5 px-3 bg-bg-base border border-border-base rounded-md hover:border-border-strong transition-colors flex items-center gap-2"
+                      className="py-1.5 px-3 bg-bg-base border border-border-base rounded-md hover:border-border-strong hover:bg-bg-subtle transition-colors flex items-center gap-[6px]"
                       style={{ maxWidth: '150px' }}
                     >
                       {chip.useSvgIcon ? (

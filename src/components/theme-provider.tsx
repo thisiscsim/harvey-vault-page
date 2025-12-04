@@ -55,7 +55,6 @@ export function ThemeProvider({
 
     // Use View Transitions API if available for smooth animation
     if (typeof document !== 'undefined' && 'startViewTransition' in document) {
-      // @ts-expect-error - startViewTransition is not yet in TypeScript's DOM types
       document.startViewTransition(switchTheme)
     } else {
       // Fallback for browsers that don't support View Transitions
