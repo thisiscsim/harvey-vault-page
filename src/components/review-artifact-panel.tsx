@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { UserPlus, Download, GripVertical, ArrowLeft, Layers, UserPlus as UserPlusIcon, Check } from "lucide-react";
 import {
@@ -11,10 +11,9 @@ import {
   ColumnResizeMode,
   RowData,
 } from '@tanstack/react-table';
-// Removed unused imports
 import ReviewTableToolbar from "@/components/review-table-toolbar";
 import { Button } from "@/components/ui/button";
-import ReviewFilterBar from "@/components/review-filter-bar";
+import ReviewFilterBar, { FilterableColumn, DisplayColumn } from "@/components/review-filter-bar";
 import ShareArtifactDialog from "@/components/share-artifact-dialog";
 import ExportReviewDialog from "@/components/export-review-dialog";
 import IManageFilePickerDialog from "@/components/imanage-file-picker-dialog";
@@ -28,9 +27,11 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { TextShimmer } from "../../components/motion-primitives/text-shimmer";
 
 // Extend column meta type for draggable property
 declare module '@tanstack/table-core' {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface ColumnMeta<TData extends RowData, TValue> {
     draggable?: boolean;
   }
@@ -131,101 +132,73 @@ const columnHelper = createColumnHelper<Document>();
 
 // We'll define columns inside the component to access textWrap state
 
-// Cell wrapper component with animation
-const AnimatedCell = ({
+// Streaming cell component with TextShimmer animation
+const StreamingCell = React.memo(({
+  isLoading,
   children,
-  rowIndex,
-  columnIndex,
-  shouldAnimate,
-  cellPadding,
 }: {
+  isLoading: boolean;
   children: React.ReactNode;
-  rowIndex: number;
-  columnIndex: number;
-  shouldAnimate: boolean;
-  cellPadding: string;
 }) => {
-  if (!shouldAnimate) {
-    return <>{children}</>;
+  // Track if we've transitioned from loading to loaded to trigger animation only once
+  const hasAnimatedRef = React.useRef(false);
+  const wasLoadingRef = React.useRef(isLoading);
+  
+  // Only animate if we're transitioning from loading to loaded
+  const shouldAnimate = wasLoadingRef.current && !isLoading && !hasAnimatedRef.current;
+  
+  React.useEffect(() => {
+    if (wasLoadingRef.current && !isLoading) {
+      hasAnimatedRef.current = true;
+    }
+    wasLoadingRef.current = isLoading;
+  }, [isLoading]);
+  
+  if (isLoading) {
+    return (
+      <div className='flex items-center justify-between'>
+        <div style={{ minWidth: '120px', whiteSpace: 'nowrap' }}>
+          <TextShimmer duration={1.5} spread={2}>
+            Generating output...
+          </TextShimmer>
+        </div>
+        <div className='relative flex items-center justify-center ml-2'>
+          <motion.div
+            className='w-3 h-3 bg-fg-disabled rounded-full'
+            animate={{
+              scale: [1, 1.2, 1],
+              opacity: [0.6, 1, 0.6],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+          />
+          <div className='absolute w-1.5 h-1.5 bg-fg-base rounded-full'></div>
+        </div>
+      </div>
+    );
   }
 
-  // Calculate negative margins based on padding
-  const negativeMargin = cellPadding === 'px-1' ? '-0.25rem' : '-0.75rem';
-  // Create a more organic diagonal wave pattern
-  const normalizedRow = rowIndex / 12; // Normalize to 0-1 based on ~12 rows
-  const normalizedCol = (columnIndex - 2) / 3; // Normalize to 0-1 for columns 2-4
-  const delay = (normalizedRow + normalizedCol) * 0.45;
-
-  // Animation timing: 2 preview waves + 1 reveal wave
-  const singleWaveDuration = 0.6;
-  const thirdWaveStartTime = delay + singleWaveDuration * 2; // When this cell's 3rd wave starts
-
-  return (
-    <div className='relative'>
-      {/* Content - initially invisible, reveals during 3rd wave */}
+  // Only use animation if we just transitioned from loading
+  if (shouldAnimate) {
+    return (
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{
-          duration: 0.01,
-          delay: thirdWaveStartTime + 0.24, // Reveal content when gradient is in the middle of 3rd wave
-        }}
+        transition={{ duration: 0.2 }}
       >
         {children}
       </motion.div>
+    );
+  }
+  
+  // Already loaded, no animation needed
+  return <>{children}</>;
+});
 
-      {/* White overlay that covers the cell initially, disappears at start of 3rd wave */}
-      <motion.div
-        className='absolute bg-bg-base'
-        style={{
-          top: negativeMargin,
-          left: negativeMargin,
-          right: negativeMargin,
-          bottom: negativeMargin,
-          height: `calc(100% + ${cellPadding === 'px-1' ? '0.5rem' : '1.5rem'})`,
-          width: `calc(100% + ${cellPadding === 'px-1' ? '0.5rem' : '1.5rem'})`,
-        }}
-        initial={{ opacity: 1 }}
-        animate={{ opacity: 0 }}
-        transition={{
-          duration: 0.01,
-          delay: thirdWaveStartTime, // Disappear at start of 3rd wave
-        }}
-      />
-
-      {/* Animated gradient overlay - repeats 2 times, then final reveal wave */}
-      <motion.div
-        className='absolute'
-        style={{
-          top: negativeMargin,
-          left: negativeMargin,
-          right: negativeMargin,
-          bottom: negativeMargin,
-          height: `calc(200% + ${cellPadding === 'px-1' ? '1rem' : '3rem'})`, // Double height for gradient
-          width: `calc(100% + ${cellPadding === 'px-1' ? '0.5rem' : '1.5rem'})`,
-          background: `linear-gradient(to bottom, 
-            transparent 0%, 
-            rgba(246, 245, 244, 0.3) 20%,
-            rgba(226, 225, 224, 0.6) 35%,
-            rgba(206, 205, 204, 0.8) 50%,
-            rgba(186, 185, 184, 0.6) 65%,
-            rgba(166, 165, 164, 0.3) 80%,
-            transparent 100%)`,
-        }}
-        initial={{ y: '-100%' }}
-        animate={{ y: '50%' }}
-        transition={{
-          duration: singleWaveDuration,
-          ease: 'easeInOut' as const,
-          delay: delay,
-          repeat: 2, // Repeat 2 times (3 total waves)
-          repeatType: 'loop' as const,
-          repeatDelay: 0, // No delay between repeats
-        }}
-      />
-    </div>
-  );
-};
+StreamingCell.displayName = 'StreamingCell';
 
 interface ReviewArtifactPanelProps {
   selectedArtifact: { title: string; subtitle: string } | null;
@@ -298,6 +271,21 @@ export default function ReviewArtifactPanel({
   const [selectedModel, setSelectedModel] = React.useState('auto');
   const [modelDropdownOpen, setModelDropdownOpen] = React.useState(false);
   
+  // Dynamic columns state - only stores structure, not data
+  interface DynamicColumn {
+    id: string;
+    header: string;
+    question: string;
+    visible: boolean;
+  }
+  const [dynamicColumns, setDynamicColumns] = useState<DynamicColumn[]>([]);
+  
+  // Cell data stored in ref to avoid re-renders - columnId -> rowId -> { isLoading, response }
+  const cellDataRef = React.useRef<Record<string, Record<number, { isLoading: boolean; response: string }>>>({});
+  
+  // Force update counter for individual cells - columnId -> rowId -> updateCount
+  const [cellUpdateTriggers, setCellUpdateTriggers] = useState<Record<string, Record<number, number>>>({});
+  
   // Update popover position when it opens
   React.useEffect(() => {
     if (addColumnPopoverOpen && fileColumnRef.current) {
@@ -369,6 +357,83 @@ export default function ReviewArtifactPanel({
       .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join(' ');
   };
+  
+  // Mock responses for dynamic columns (simulating AI-generated content)
+  const generateMockResponse = (question: string): string => {
+    // Simple mock responses based on question keywords
+    if (question.toLowerCase().includes('date') || question.toLowerCase().includes('signing')) {
+      const dates = ['January 15, 2024', 'March 3, 2023', 'December 1, 2022', 'August 22, 2023', 'November 8, 2024', 'February 14, 2023', 'July 4, 2022', 'September 30, 2023', 'April 19, 2024', 'October 11, 2023', 'May 5, 2023', 'June 28, 2024'];
+      return dates[Math.floor(Math.random() * dates.length)];
+    }
+    if (question.toLowerCase().includes('term') || question.toLowerCase().includes('duration')) {
+      const terms = ['12 months', '24 months', '36 months', '5 years', '10 years', 'Perpetual', 'Until terminated', '18 months'];
+      return terms[Math.floor(Math.random() * terms.length)];
+    }
+    if (question.toLowerCase().includes('value') || question.toLowerCase().includes('amount') || question.toLowerCase().includes('price')) {
+      const values = ['$1,500,000', '$250,000', '$5,000,000', '$750,000', '$2,300,000', 'Undisclosed', '$450,000', '$8,200,000'];
+      return values[Math.floor(Math.random() * values.length)];
+    }
+    // Default response
+    const defaults = ['Information extracted from document...', 'See section 4.2 for details', 'Clause present in agreement', 'Not specified in document'];
+    return defaults[Math.floor(Math.random() * defaults.length)];
+  };
+  
+  // Handle running a column - adds a new column with streaming state
+  const handleRunColumn = useCallback(() => {
+    if (!columnHeader || !columnQuestion) return;
+    
+    const columnId = `dynamic-${Date.now()}`;
+    
+    // Create the new column structure (no responses stored here)
+    const newColumn: DynamicColumn = {
+      id: columnId,
+      header: columnHeader,
+      question: columnQuestion,
+      visible: true,
+    };
+    
+    // Initialize cell data in ref (loading state, empty response)
+    cellDataRef.current[columnId] = {};
+    const initialTriggers: Record<number, number> = {};
+    tableData.forEach(row => {
+      cellDataRef.current[columnId][row.id] = { isLoading: true, response: '' };
+      initialTriggers[row.id] = 0;
+    });
+    
+    setDynamicColumns(prev => [...prev, newColumn]);
+    setCellUpdateTriggers(prev => ({ ...prev, [columnId]: initialTriggers }));
+    
+    // Close the popover
+    setAddColumnPopoverOpen(false);
+    
+    // Generate random delays for each row (not sequential)
+    const baseDelay = 600; // Minimum delay
+    const maxAdditionalDelay = 2500; // Random additional delay up to this
+    
+    tableData.forEach((row) => {
+      // Random delay between baseDelay and baseDelay + maxAdditionalDelay
+      const randomDelay = baseDelay + Math.random() * maxAdditionalDelay;
+      
+      // Generate mock response and reveal after random delay
+      setTimeout(() => {
+        const response = generateMockResponse(columnQuestion);
+        
+        // Update cell data in ref
+        if (cellDataRef.current[columnId]) {
+          cellDataRef.current[columnId][row.id] = { isLoading: false, response };
+        }
+        
+        // Trigger only this specific cell to re-render
+        setCellUpdateTriggers(prev => ({
+          ...prev,
+          [columnId]: { 
+            ...prev[columnId], 
+            [row.id]: (prev[columnId]?.[row.id] || 0) + 1 
+          }
+        }));
+      }, randomDelay);
+    });
+  }, [columnHeader, columnQuestion, tableData]);
   
   // Transform selected files into table data format - only for initialization
   const initialData: Document[] = React.useMemo(() => {
@@ -795,13 +860,91 @@ export default function ReviewArtifactPanel({
     }),
   ], [textWrap, hoveredHeader, draggedColumn]);
   
+  // Memoized cell component that only re-renders when its specific data changes
+  // Wrapped in useMemo to prevent recreation on parent re-renders
+  const MemoizedDynamicCell = React.useMemo(() => {
+    const Component = React.memo(({ 
+      columnId, 
+      rowId, 
+      textWrapEnabled,
+    }: { 
+      columnId: string; 
+      rowId: number; 
+      textWrapEnabled: boolean;
+      // updateTrigger is intentionally not used in render, just for triggering re-render
+      updateTrigger?: number;
+    }) => {
+      const cellData = cellDataRef.current[columnId]?.[rowId] || { isLoading: true, response: '' };
+      const { isLoading, response } = cellData;
+      
+      return (
+        <StreamingCell isLoading={isLoading}>
+          <span
+            className={`block ${textWrapEnabled ? '' : 'truncate'} ${response === 'Not specified in document' ? 'text-fg-muted' : 'text-fg-base'}`}
+            style={{ 
+              whiteSpace: textWrapEnabled ? 'normal' : 'nowrap',
+              wordBreak: textWrapEnabled ? 'break-word' : 'normal'
+            }}
+          >
+            {response}
+          </span>
+        </StreamingCell>
+      );
+    });
+    Component.displayName = 'MemoizedDynamicCell';
+    return Component;
+  }, []);
+  
+  // Create dynamic column definitions - stable, doesn't depend on hover/drag state
+  // Only include visible columns
+  const dynamicColumnDefs = React.useMemo(() => {
+    return dynamicColumns.filter(col => col.visible).map(col => 
+      columnHelper.display({
+        id: col.id,
+        header: () => {
+          // Use CSS to show/hide the grip icon on hover instead of React state
+          return (
+            <div className='flex items-center gap-1 h-4 dynamic-column-header'>
+              <GripVertical 
+                size={12} 
+                className="cursor-grab active:cursor-grabbing text-fg-muted hover:text-fg-subtle flex-shrink-0 grip-icon hidden" 
+              />
+              <TypeIcon className="flex-shrink-0 type-icon" />
+              <span className="truncate">{col.header}</span>
+            </div>
+          );
+        },
+        size: 300,
+        minSize: 300,
+        maxSize: 500,
+        meta: {
+          draggable: true
+        },
+        cell: ({ row }) => {
+          // Get the update trigger for this specific cell to force re-render when needed
+          const trigger = cellUpdateTriggers[col.id]?.[row.original.id] || 0;
+          
+          return (
+            <MemoizedDynamicCell 
+              columnId={col.id} 
+              rowId={row.original.id}
+              textWrapEnabled={textWrap}
+              updateTrigger={trigger}
+            />
+          );
+        },
+      })
+    );
+  }, [dynamicColumns, cellUpdateTriggers, textWrap, MemoizedDynamicCell]);
+  
   // Combine columns based on mode - only show query columns when NOT in files-only mode
   const columns = React.useMemo(() => {
     if (isFilesOnlyMode) {
-      return baseColumns;
+      // When files are added but no columns run yet, show base columns plus any dynamic columns
+      return [...baseColumns, ...dynamicColumnDefs];
     }
-    return [...baseColumns, ...queryColumns];
-  }, [isFilesOnlyMode, baseColumns, queryColumns]);
+    return [...baseColumns, ...queryColumns, ...dynamicColumnDefs];
+  }, [isFilesOnlyMode, baseColumns, queryColumns, dynamicColumnDefs]);
   
   const table = useReactTable({
     data,
@@ -922,7 +1065,68 @@ export default function ReviewArtifactPanel({
         />
         
         {/* Filter Bar */}
-        <ReviewFilterBar />
+        <ReviewFilterBar 
+          columns={(() => {
+            // Only show filter columns when we have files AND at least one dynamic column
+            if (!isFilesOnlyMode || dynamicColumns.length === 0) return [];
+            
+            const filterColumns: FilterableColumn[] = [
+              { id: 'fileName', header: 'File', type: 'file' },
+            ];
+            
+            // Add dynamic columns
+            dynamicColumns.forEach(col => {
+              filterColumns.push({
+                id: col.id,
+                header: col.header,
+                type: 'text',
+              });
+            });
+            
+            return filterColumns;
+          })()}
+          displayColumns={(() => {
+            // Only show display options when we have files AND at least one dynamic column
+            if (!isFilesOnlyMode || dynamicColumns.length === 0) return [];
+            
+            const displayCols: DisplayColumn[] = [
+              { id: 'fileName', header: 'File', visible: true, fixed: true },
+            ];
+            
+            // Add dynamic columns
+            dynamicColumns.forEach(col => {
+              displayCols.push({
+                id: col.id,
+                header: col.header,
+                visible: col.visible,
+                fixed: false,
+              });
+            });
+            
+            return displayCols;
+          })()}
+          onToggleColumnVisibility={(columnId) => {
+            setDynamicColumns(prev => prev.map(col => 
+              col.id === columnId ? { ...col, visible: !col.visible } : col
+            ));
+          }}
+          onReorderColumns={(newDisplayColumns) => {
+            // Extract the new order of dynamic columns (excluding fixed ones)
+            const newOrder = newDisplayColumns
+              .filter(col => !col.fixed)
+              .map(col => col.id);
+            
+            // Reorder dynamic columns based on the new order
+            setDynamicColumns(prev => {
+              const reordered: typeof prev = [];
+              newOrder.forEach(id => {
+                const col = prev.find(c => c.id === id);
+                if (col) reordered.push(col);
+              });
+              return reordered;
+            });
+          }}
+        />
         
         {/* Content Area */}
         <div className="flex-1 min-w-0 bg-bg-base" style={{ minHeight: 0 }}>
@@ -1041,7 +1245,7 @@ export default function ReviewArtifactPanel({
           ) : (
             /* Table container */
             <div className="h-full relative">
-              <div className={`absolute inset-0 ${isFilesOnlyMode ? 'overflow-x-hidden' : 'overflow-x-auto'} overflow-y-auto`}>
+              <div className={`absolute inset-0 ${isFilesOnlyMode && dynamicColumns.length === 0 ? 'overflow-x-hidden' : 'overflow-x-auto'} overflow-y-auto`}>
               <table 
               className={`border-separate border-spacing-0 ${
                 table.getState().columnSizingInfo.isResizingColumn ? 'select-none' : ''
@@ -1068,8 +1272,12 @@ export default function ReviewArtifactPanel({
                         className={`px-3 h-8 text-left font-medium relative transition-colors text-fg-subtle ${
                           header.id === 'select' ? 'w-[48px]' : ''
                         } ${header.id === 'forceMajeureClause' ? 'w-[325px]' : ''} ${header.id === 'agreementParties' ? 'w-[325px]' : ''} ${header.id === 'assignmentProvisionSummary' ? 'w-[325px]' : ''} ${header.index !== 0 ? 'border-l border-border-base' : ''} ${header.index === headerGroup.headers.length - 1 ? 'border-r border-border-base' : ''} border-b border-border-base ${
-                          header.column.columnDef.meta?.draggable && draggedColumn === header.id ? 'bg-bg-subtle' : 
-                          header.column.columnDef.meta?.draggable && hoveredHeader === header.id ? 'bg-bg-subtle' : 'bg-bg-base'
+                          // For static draggable columns, use React state for hover background
+                          // For dynamic columns (starting with 'dynamic-'), CSS handles the hover
+                          header.column.columnDef.meta?.draggable && !header.id.startsWith('dynamic-') && draggedColumn === header.id ? 'bg-bg-subtle' : 
+                          header.column.columnDef.meta?.draggable && !header.id.startsWith('dynamic-') && hoveredHeader === header.id ? 'bg-bg-subtle' : 
+                          // Dynamic columns use bg-bg-base, CSS handles hover
+                          'bg-bg-base'
                         } ${
                           header.column.columnDef.meta?.draggable ? 'cursor-grab active:cursor-grabbing' : ''
                         } ${
@@ -1085,11 +1293,17 @@ export default function ReviewArtifactPanel({
                         }}
                         draggable={header.column.columnDef.meta?.draggable}
                         onMouseEnter={() => {
-                          if (header.column.columnDef.meta?.draggable) {
+                          // Only set hover state for static columns, not dynamic ones
+                          if (header.column.columnDef.meta?.draggable && !header.id.startsWith('dynamic-')) {
                             setHoveredHeader(header.id);
                           }
                         }}
-                        onMouseLeave={() => setHoveredHeader(null)}
+                        onMouseLeave={() => {
+                          // Only clear if it's not a dynamic column
+                          if (!header.id.startsWith('dynamic-')) {
+                            setHoveredHeader(null);
+                          }
+                        }}
                         onDragStart={(e) => {
                           if (header.column.columnDef.meta?.draggable) {
                             setDraggedColumn(header.id);
@@ -1166,7 +1380,7 @@ export default function ReviewArtifactPanel({
                 ))}
               </thead>
               <tbody>
-                {table.getRowModel().rows.map((row, rowIndex) => {
+                {table.getRowModel().rows.map((row) => {
                   const isRowSelected = selectedRows.has(row.original.id);
                   const isRowHovered = hoveredRow === row.original.id;
                   return (
@@ -1177,16 +1391,16 @@ export default function ReviewArtifactPanel({
                       className="transition-colors"
                     >
                       {row.getVisibleCells().map((cell, cellIndex) => {
-                        const shouldAnimate =
-                          cell.column.id !== 'select' &&
-                          cell.column.id !== 'fileName';
                         const cellPadding =
                           cell.column.id === 'fileName' ? 'px-3' : 'px-3';
                         const isSelectColumn = cell.column.id === 'select';
+                        const isLastCell = cellIndex === row.getVisibleCells().length - 1;
+                        const shouldExtendBorder = isLastCell && isFilesOnlyMode;
+                        
                         return (
                         <td
                           key={cell.id}
-                          className={`${cellPadding} h-8 ${isRowSelected ? 'bg-bg-base-hover' : isRowHovered ? 'bg-bg-base-hover' : 'bg-bg-base'} ${cell.column.id === 'forceMajeureClause' ? 'w-[325px]' : ''} ${cell.column.id === 'agreementParties' ? 'w-[325px]' : ''} ${cell.column.id === 'assignmentProvisionSummary' ? 'w-[325px]' : ''} ${cell.column.id !== table.getAllColumns()[0].id ? 'border-l border-border-base' : ''} ${cellIndex === row.getVisibleCells().length - 1 ? 'border-r border-border-base' : ''} border-b border-border-base relative ${cellIndex === row.getVisibleCells().length - 1 && isFilesOnlyMode ? 'extend-border-line' : 'overflow-hidden'} ${isSelectColumn ? 'cursor-pointer' : ''}`}
+                          className={`${cellPadding} h-8 ${isRowSelected ? 'bg-bg-base-hover' : isRowHovered ? 'bg-bg-base-hover' : 'bg-bg-base'} ${cell.column.id === 'forceMajeureClause' ? 'w-[325px]' : ''} ${cell.column.id === 'agreementParties' ? 'w-[325px]' : ''} ${cell.column.id === 'assignmentProvisionSummary' ? 'w-[325px]' : ''} ${cell.column.id !== table.getAllColumns()[0].id ? 'border-l border-border-base' : ''} ${isLastCell ? 'border-r border-border-base' : ''} border-b border-border-base relative ${shouldExtendBorder ? 'extend-border-line' : 'overflow-hidden'} ${isSelectColumn ? 'cursor-pointer' : ''}`}
                           style={{ 
                             fontSize: '12px', 
                             lineHeight: '16px',
@@ -1204,19 +1418,12 @@ export default function ReviewArtifactPanel({
                               }}
                             />
                           )}
-                          <AnimatedCell
-                            rowIndex={rowIndex}
-                            columnIndex={cellIndex}
-                            shouldAnimate={shouldAnimate}
-                            cellPadding={cellPadding}
-                          >
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext()
-                            )}
-                          </AnimatedCell>
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
                           {/* Hover detection area extending to the right for files-only mode */}
-                          {cellIndex === row.getVisibleCells().length - 1 && isFilesOnlyMode && (
+                          {shouldExtendBorder && (
                             <div 
                               className="absolute top-0 bottom-0 cursor-default"
                               style={{ 
@@ -1520,6 +1727,7 @@ export default function ReviewArtifactPanel({
                 variant="default"
                 size="small"
                 disabled={columnQuestion.length === 0 || columnHeader.length === 0 || isGeneratingHeader}
+                onClick={handleRunColumn}
               >
                 Run column
               </Button>

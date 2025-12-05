@@ -903,6 +903,32 @@
   pointer-events: none;
 }
 
+/* Dynamic column header hover - show grip icon, hide type icon */
+.dynamic-column-header:hover .grip-icon {
+  display: block !important;
+}
+
+.dynamic-column-header:hover .type-icon {
+  display: none !important;
+}
+
+/* Dynamic column header needs to fill the entire th cell for proper hover */
+th:has(.dynamic-column-header) {
+  padding: 0 !important;
+}
+
+.dynamic-column-header {
+  padding: 0 0.75rem;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.dynamic-column-header:hover {
+  background-color: var(--bg-subtle);
+}
+
 /* ========================================
    VIEW TRANSITIONS API - Theme Toggle Animation
    Top-to-bottom wipe effect
