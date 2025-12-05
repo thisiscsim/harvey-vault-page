@@ -3,16 +3,17 @@ import { cn } from "@/lib/utils"
 
 const buttonVariants = {
   variant: {
-    default: "bg-bg-interactive text-white hover:bg-bg-interactive",
-    secondary: "border border-border-base bg-bg-base hover:bg-bg-subtle text-fg-subtle",
-    ghost: "hover:bg-bg-subtle text-fg-subtle",
-    outline: "border border-border-base bg-bg-base hover:bg-bg-subtle text-fg-subtle",
+    default: "bg-button-inverted text-fg-on-color hover:bg-button-inverted-hover active:bg-button-inverted-pressed",
+    secondary: "bg-button-neutral border border-border-base hover:bg-button-neutral-hover active:bg-button-neutral-pressed text-fg-base",
+    ghost: "hover:bg-button-neutral-hover active:bg-button-neutral-pressed text-fg-subtle",
+    outline: "bg-button-neutral border border-border-base hover:bg-button-neutral-hover active:bg-button-neutral-pressed text-fg-base",
+    danger: "bg-button-danger text-white hover:bg-button-danger-hover active:bg-button-danger-pressed",
   },
   size: {
-    default: "h-8 px-3 text-sm",
-    small: "h-6 px-2 text-xs",
-    icon: "h-8 w-8",
-    iconSmall: "h-6 w-6",
+    default: "h-8 px-3 text-sm rounded-[8px]",
+    small: "h-6 px-2 text-xs rounded-[6px]",
+    icon: "h-8 w-8 rounded-[8px]",
+    iconSmall: "h-6 w-6 rounded-[6px]",
   },
 }
 
@@ -27,7 +28,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <button
         className={cn(
-          "inline-flex items-center justify-center rounded-md font-normal transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-border-interactive disabled:pointer-events-none disabled:opacity-50",
+          "inline-flex items-center justify-center font-normal transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-border-interactive disabled:pointer-events-none disabled:opacity-50",
           buttonVariants.variant[variant],
           buttonVariants.size[size],
           className

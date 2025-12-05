@@ -333,6 +333,21 @@
   --ui-jade-bg: #C1D7D6;
   --ui-jade-bg-hover: #9FC4C3;
 
+  /* Button Inverted (Primary) */
+  --button-inverted: #1A1917;
+  --button-inverted-hover: #4E4B46;
+  --button-inverted-pressed: #6A6660;
+
+  /* Button Neutral (Secondary) */
+  --button-neutral: #FFFFFF;
+  --button-neutral-hover: #F1EFEC;
+  --button-neutral-pressed: #E4E1DD;
+
+  /* Button Danger */
+  --button-danger: #E11D48;
+  --button-danger-hover: #BE123C;
+  --button-danger-pressed: #9F1239;
+
   /* Legacy tokens (to be migrated) */
   --background: #F7F6F4;
   --foreground: #1A1917;
@@ -443,6 +458,21 @@
   --ui-jade-bg: #0E4749;
   --ui-jade-bg-hover: #155B5E;
 
+  /* Button Inverted (Primary) */
+  --button-inverted: #4E4B46;
+  --button-inverted-hover: #848079;
+  --button-inverted-pressed: #9E9B95;
+
+  /* Button Neutral (Secondary) */
+  --button-neutral: rgba(255, 255, 255, 0);
+  --button-neutral-hover: rgba(255, 255, 255, 0.08);
+  --button-neutral-pressed: rgba(255, 255, 255, 0.12);
+
+  /* Button Danger */
+  --button-danger: #9F1239;
+  --button-danger-hover: #BE123C;
+  --button-danger-pressed: #E11D48;
+
   /* Legacy tokens (to be migrated) */
   --background: #1A1917;
   --foreground: #F7F6F4;
@@ -486,6 +516,60 @@
   }
   button {
     @apply cursor-pointer;
+  }
+}
+
+/* Button color utilities */
+@layer utilities {
+  /* Button Inverted (Primary) */
+  .bg-button-inverted {
+    background-color: var(--button-inverted);
+  }
+  .bg-button-inverted-hover {
+    background-color: var(--button-inverted-hover);
+  }
+  .bg-button-inverted-pressed {
+    background-color: var(--button-inverted-pressed);
+  }
+  .hover\:bg-button-inverted-hover:hover {
+    background-color: var(--button-inverted-hover);
+  }
+  .active\:bg-button-inverted-pressed:active {
+    background-color: var(--button-inverted-pressed);
+  }
+
+  /* Button Neutral (Secondary) */
+  .bg-button-neutral {
+    background-color: var(--button-neutral);
+  }
+  .bg-button-neutral-hover {
+    background-color: var(--button-neutral-hover);
+  }
+  .bg-button-neutral-pressed {
+    background-color: var(--button-neutral-pressed);
+  }
+  .hover\:bg-button-neutral-hover:hover {
+    background-color: var(--button-neutral-hover);
+  }
+  .active\:bg-button-neutral-pressed:active {
+    background-color: var(--button-neutral-pressed);
+  }
+
+  /* Button Danger */
+  .bg-button-danger {
+    background-color: var(--button-danger);
+  }
+  .bg-button-danger-hover {
+    background-color: var(--button-danger-hover);
+  }
+  .bg-button-danger-pressed {
+    background-color: var(--button-danger-pressed);
+  }
+  .hover\:bg-button-danger-hover:hover {
+    background-color: var(--button-danger-hover);
+  }
+  .active\:bg-button-danger-pressed:active {
+    background-color: var(--button-danger-pressed);
   }
 }
 

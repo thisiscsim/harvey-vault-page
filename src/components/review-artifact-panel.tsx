@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { UserPlus, Download, GripVertical, ArrowLeft, Layers, UserPlus as UserPlusIcon, Table2 } from "lucide-react";
+import { UserPlus, Download, GripVertical, ArrowLeft, Layers, UserPlus as UserPlusIcon } from "lucide-react";
 import {
   createColumnHelper,
   flexRender,
@@ -13,12 +13,14 @@ import {
 } from '@tanstack/react-table';
 // Removed unused imports
 import ReviewTableToolbar from "@/components/review-table-toolbar";
+import ReviewFilterBar from "@/components/review-filter-bar";
 import ShareArtifactDialog from "@/components/share-artifact-dialog";
 import ExportReviewDialog from "@/components/export-review-dialog";
 import IManageFilePickerDialog from "@/components/imanage-file-picker-dialog";
 import ReviewTableActionBar from "@/components/review-table-action-bar";
 import ManageGroupedFilesPopover from "@/components/manage-grouped-files-popover";
 import Image from "next/image";
+import { SvgIcon } from "@/components/svg-icon";
 
 // Extend column meta type for draggable property
 declare module '@tanstack/table-core' {
@@ -90,22 +92,13 @@ const SelectionIcon = ({ className }: { className?: string }) => (
 );
 
 const FileIcon = ({ className }: { className?: string }) => (
-  <svg
-    width='12'
-    height='12'
-    viewBox='0 0 18 18'
-    fill='none'
-    xmlns='http://www.w3.org/2000/svg'
-    className={className}
-  >
-    <path
-      d='M9.75 2.625V5.25C9.75 6.07843 10.4216 6.75 11.25 6.75H13.875M5.25 2.25H9.1287C9.5265 2.25 9.90803 2.40803 10.1894 2.68934L13.8106 6.31066C14.092 6.59197 14.25 6.97349 14.25 7.37132V14.25C14.25 15.0784 13.5784 15.75 12.75 15.75H5.25C4.42157 15.75 3.75 15.0784 3.75 14.25V3.75C3.75 2.92157 4.42157 2.25 5.25 2.25Z'
-      stroke='black'
-      strokeWidth='1.5'
-      strokeLinecap='round'
-      strokeLinejoin='round'
-    />
-  </svg>
+  <SvgIcon 
+    src="/central_icons/File.svg" 
+    alt="File" 
+    width={14} 
+    height={14} 
+    className={className || "text-fg-subtle"} 
+  />
 );
 
 type Document = {
@@ -664,7 +657,7 @@ export default function ReviewArtifactPanel({
       cell: ({ getValue }) => {
         const value = getValue();
         return (
-          <span className='inline-block px-2 py-1 rounded-[6px] bg-[#FAFAF9] border border-[#ECEBE9] text-black'>
+          <span className='inline-block px-2 py-1 rounded-[6px] bg-bg-subtle border border-border-base text-fg-base'>
             {value}
           </span>
         );
@@ -791,16 +784,14 @@ export default function ReviewArtifactPanel({
             {/* Share Button */}
             <button 
               onClick={() => onShareArtifactDialogOpenChange(true)}
-              className="flex items-center gap-2 px-3 py-1.5 border border-border-base rounded-md bg-bg-base hover:bg-bg-subtle transition-colors text-fg-base text-sm font-normal" 
-              style={{ height: '32px' }}
+              className="h-8 flex items-center gap-2 px-3 border border-border-base rounded-[8px] bg-button-neutral hover:bg-button-neutral-hover active:bg-button-neutral-pressed transition-colors text-fg-base text-sm font-normal"
             >
               <UserPlus size={16} className="text-fg-base" />
               <span className="text-sm font-normal">Share</span>
             </button>
             {/* Export Button */}
             <button 
-              className="flex items-center gap-2 px-3 py-1.5 border border-border-base rounded-md bg-bg-base hover:bg-bg-subtle transition-colors text-fg-base text-sm font-normal" 
-              style={{ height: '32px' }}
+              className="h-8 flex items-center gap-2 px-3 border border-border-base rounded-[8px] bg-button-neutral hover:bg-button-neutral-hover active:bg-button-neutral-pressed transition-colors text-fg-base text-sm font-normal"
               onClick={() => onExportReviewDialogOpenChange(true)}
             >
               <Download size={16} className="text-fg-base" />
@@ -823,60 +814,54 @@ export default function ReviewArtifactPanel({
           onTextWrapChange={setTextWrap}
         />
         
+        {/* Filter Bar */}
+        <ReviewFilterBar />
+        
         {/* Content Area */}
         <div className="flex-1 min-w-0 bg-bg-base" style={{ minHeight: 0 }}>
           {isEmpty ? (
             /* Empty State */
             <div className="h-full relative bg-bg-base overflow-auto">
-              {/* Table Header with File column and Add column */}
-              <div className="border-b border-[#ECEBE9]">
+              {/* Table Header with File column */}
+              <div className="border-b border-border-base">
                 <div className="flex items-center">
                   {/* Checkbox column */}
-                  <div className="w-[48px] h-8 flex items-center justify-center border-r border-[#ECEBE9] flex-shrink-0">
+                  <div className="w-[48px] h-8 flex items-center justify-center border-r border-border-base flex-shrink-0">
                     <input type="checkbox" className="custom-checkbox" disabled />
                   </div>
                   
                   {/* File column header */}
-                  <div className="px-3 h-8 flex items-center border-r border-[#ECEBE9]" style={{ width: '220px' }}>
+                  <div className="px-3 h-8 flex items-center border-r border-border-base flex-1" style={{ minWidth: '220px' }}>
                     <div className="flex items-center gap-1">
                       <FileIcon />
                       <span className="text-xs font-medium" style={{ color: '#514E48' }}>File</span>
                     </div>
                   </div>
-                  
-                  {/* Add column button */}
-                  <div className="px-3 h-8 flex items-center flex-1">
-                    <button className="flex items-center gap-1 text-fg-subtle hover:text-fg-base transition-colors">
-                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M6 1V11M1 6H11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                      </svg>
-                      <span className="text-xs font-medium">Add column</span>
-                    </button>
-                  </div>
                 </div>
               </div>
               
               {/* Add file row */}
-              <div className="border-b border-[#ECEBE9] bg-bg-base hover:bg-bg-subtle transition-colors">
+              <div className="border-b border-border-base bg-bg-base hover:bg-bg-base-hover transition-colors cursor-pointer">
                 <div className="flex items-center" style={{ height: '32px' }}>
                   {/* Plus icon in checkbox column */}
-                  <div className="w-[48px] h-full flex items-center justify-center border-r border-[#ECEBE9] flex-shrink-0">
+                  <div className="w-[48px] h-full flex items-center justify-center border-r border-border-base flex-shrink-0 text-fg-subtle">
                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M6 1V11M1 6H11" stroke="#706D66" strokeWidth="1.5" strokeLinecap="round"/>
+                      <path d="M6 1V11M1 6H11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                     </svg>
                   </div>
                   
                   {/* Add file text */}
                   <div className="px-3 h-full flex items-center" style={{ width: '220px' }}>
-                    <button className="flex items-center gap-1.5 text-fg-base hover:text-fg-subtle transition-colors">
-                      <Image 
-                        src="/add-files-review.svg" 
+                    <div className="flex items-center gap-1.5 text-fg-subtle">
+                      <SvgIcon 
+                        src="/central_icons/Add File.svg" 
                         alt="Add file" 
-                        width={12} 
-                        height={12}
+                        width={14} 
+                        height={14}
+                        className="text-fg-subtle"
                       />
                       <span className="font-medium" style={{ fontSize: '12px' }}>Add file</span>
-                    </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -884,13 +869,19 @@ export default function ReviewArtifactPanel({
               {/* Centered empty state content */}
               <div className="absolute inset-0 flex items-center justify-center" style={{ top: '88px' }}>
                 <div className="flex flex-col items-center" style={{ maxWidth: '420px' }}>
-                  {/* Table Icon */}
-                  <div className="mb-6">
-                    <Table2 size={24} className="text-fg-muted" strokeWidth={1.5} />
+                  {/* Review Icon */}
+                  <div>
+                    <SvgIcon 
+                      src="/central_icons/Review.svg" 
+                      alt="Review" 
+                      width={24} 
+                      height={24} 
+                      className="text-fg-muted" 
+                    />
                   </div>
                   
                   {/* Heading */}
-                  <h3 className="text-base font-medium text-fg-base mb-2">
+                  <h3 className="text-base font-medium text-fg-base mb-0.5">
                     Add documents to get started
                   </h3>
                   
@@ -901,8 +892,7 @@ export default function ReviewArtifactPanel({
                   
                   {/* Upload Button */}
                   <button 
-                    className="flex items-center justify-center gap-2 px-3 py-1.5 bg-bg-interactive text-white rounded-md hover:bg-bg-interactive transition-colors mb-4 text-sm font-normal"
-                    style={{ height: '32px' }}
+                    className="h-8 flex items-center justify-center gap-2 px-3 bg-button-inverted text-fg-on-color rounded-[8px] hover:bg-button-inverted-hover active:bg-button-inverted-pressed transition-colors mb-4 text-sm font-normal"
                   >
                     Upload files
                   </button>
@@ -911,24 +901,23 @@ export default function ReviewArtifactPanel({
                   <p className="text-xs text-fg-muted mb-4">Or choose from</p>
                   
                   {/* Integration Options */}
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
                     <button 
-                      className="flex items-center gap-2 px-3 py-1.5 border border-border-base rounded-md bg-bg-base hover:bg-bg-subtle transition-colors text-fg-base text-sm font-normal"
-                      style={{ height: '32px' }}
+                      className="h-8 flex items-center gap-2 px-3 border border-border-base rounded-[8px] bg-button-neutral hover:bg-button-neutral-hover active:bg-button-neutral-pressed transition-colors text-fg-base text-sm font-normal"
                     >
-                      <Image 
-                        src="/folder-vault-outline.svg" 
+                      <SvgIcon 
+                        src="/central_icons/Vault.svg" 
                         alt="Vault" 
                         width={16} 
                         height={16}
+                        className="text-fg-base"
                       />
                       <span>Add from Vault</span>
                     </button>
                     
                     <button 
                       onClick={() => setIManageDialogOpen(true)}
-                      className="flex items-center gap-2 px-3 py-1.5 border border-border-base rounded-md bg-bg-base hover:bg-bg-subtle transition-colors text-fg-base text-sm font-normal"
-                      style={{ height: '32px' }}
+                      className="h-8 flex items-center gap-2 px-3 border border-border-base rounded-[8px] bg-button-neutral hover:bg-button-neutral-hover active:bg-button-neutral-pressed transition-colors text-fg-base text-sm font-normal"
                     >
                       <Image 
                         src="/imanage.svg" 
@@ -947,7 +936,7 @@ export default function ReviewArtifactPanel({
             <div className="h-full relative">
               <div className="absolute inset-0 overflow-x-auto overflow-y-auto">
               <table 
-              className={`border-separate border-spacing-0 border-b border-[#ECEBE9] ${
+              className={`border-separate border-spacing-0 border-b border-border-base ${
                 table.getState().columnSizingInfo.isResizingColumn ? 'select-none' : ''
               }`} 
               style={{ width: table.getCenterTotalSize() }}
@@ -970,7 +959,7 @@ export default function ReviewArtifactPanel({
                         key={header.id}
                         className={`px-3 h-8 text-left font-medium relative transition-colors ${
                           header.id === 'select' ? 'w-[48px]' : ''
-                        } ${header.id === 'forceMajeureClause' ? 'w-[325px]' : ''} ${header.id === 'agreementParties' ? 'w-[325px]' : ''} ${header.id === 'assignmentProvisionSummary' ? 'w-[325px]' : ''} ${header.index !== 0 ? 'border-l border-[#ECEBE9]' : ''} ${header.index === headerGroup.headers.length - 1 ? 'border-r border-[#ECEBE9]' : ''} border-b border-[#ECEBE9] ${
+                        } ${header.id === 'forceMajeureClause' ? 'w-[325px]' : ''} ${header.id === 'agreementParties' ? 'w-[325px]' : ''} ${header.id === 'assignmentProvisionSummary' ? 'w-[325px]' : ''} ${header.index !== 0 ? 'border-l border-border-base' : ''} ${header.index === headerGroup.headers.length - 1 ? 'border-r border-border-base' : ''} border-b border-border-base ${
                           header.column.columnDef.meta?.draggable && draggedColumn === header.id ? 'bg-bg-subtle' : 
                           header.column.columnDef.meta?.draggable && hoveredHeader === header.id ? 'bg-bg-subtle' : 'bg-bg-base'
                         } ${
@@ -1088,7 +1077,7 @@ export default function ReviewArtifactPanel({
                         return (
                         <td
                           key={cell.id}
-                          className={`${cellPadding} h-8 ${isRowSelected ? 'bg-[#FAFAF9]' : isRowHovered ? 'bg-bg-subtle' : 'bg-bg-base'} ${cell.column.id === 'forceMajeureClause' ? 'w-[325px]' : ''} ${cell.column.id === 'agreementParties' ? 'w-[325px]' : ''} ${cell.column.id === 'assignmentProvisionSummary' ? 'w-[325px]' : ''} ${cell.column.id !== table.getAllColumns()[0].id ? 'border-l border-[#ECEBE9]' : ''} ${cellIndex === row.getVisibleCells().length - 1 ? 'border-r border-[#ECEBE9]' : ''} ${row.index !== table.getRowModel().rows.length - 1 ? 'border-b border-[#ECEBE9]' : ''} relative overflow-hidden ${isSelectColumn ? 'cursor-pointer' : ''}`}
+                          className={`${cellPadding} h-8 ${isRowSelected ? 'bg-bg-subtle' : isRowHovered ? 'bg-bg-subtle-hover' : 'bg-bg-base'} ${cell.column.id === 'forceMajeureClause' ? 'w-[325px]' : ''} ${cell.column.id === 'agreementParties' ? 'w-[325px]' : ''} ${cell.column.id === 'assignmentProvisionSummary' ? 'w-[325px]' : ''} ${cell.column.id !== table.getAllColumns()[0].id ? 'border-l border-border-base' : ''} ${cellIndex === row.getVisibleCells().length - 1 ? 'border-r border-border-base' : ''} ${row.index !== table.getRowModel().rows.length - 1 ? 'border-b border-border-base' : ''} relative overflow-hidden ${isSelectColumn ? 'cursor-pointer' : ''}`}
                           style={{ 
                             fontSize: '12px', 
                             lineHeight: '16px',

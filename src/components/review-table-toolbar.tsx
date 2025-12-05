@@ -1,7 +1,7 @@
 "use client";
 
-import { ListFilter, Cog } from "lucide-react";
 import { SmallButton } from "@/components/ui/button";
+import { SvgIcon } from "@/components/svg-icon";
 import { useState } from "react";
 
 interface ReviewTableToolbarProps {
@@ -37,7 +37,7 @@ export default function ReviewTableToolbar({
   const [textLength, setTextLength] = useState<'concise' | 'extend'>('concise');
 
   return (
-    <div className="px-3 py-3 border-b border-border-base bg-bg-base flex items-center justify-between" style={{ height: '52px' }}>
+    <div className="px-3 py-2 border-b border-border-base bg-bg-base flex items-center justify-between" style={{ height: '42px' }}>
       <div className="flex items-center gap-2">
         {/* Toggle Chat Button */}
         <SmallButton
@@ -45,13 +45,12 @@ export default function ReviewTableToolbar({
           variant="secondary"
           className={chatOpen ? "bg-bg-subtle" : ""}
           icon={
-            <img 
-              src={chatOpen ? "/square-asterisk-filled.svg" : "/square-asterisk-outline.svg"}
+            <SvgIcon 
+              src={chatOpen ? "/central_icons/Assistant - Filled.svg" : "/central_icons/Assistant.svg"}
               alt="Harvey" 
               width={14} 
               height={14} 
-              className="text-fg-subtle"
-              style={{ filter: chatOpen ? 'none' : 'brightness(0) saturate(100%) invert(38%) sepia(8%) saturate(664%) hue-rotate(314deg) brightness(96%) contrast(92%)' }}
+              className={chatOpen ? "text-fg-base" : "text-fg-subtle"}
             />
           }
         >
@@ -61,14 +60,20 @@ export default function ReviewTableToolbar({
         {/* Separator */}
         <div className="w-px bg-bg-subtle-pressed" style={{ height: '20px' }}></div>
         
-        {/* Filter Button */}
-        <SmallButton icon={<ListFilter size={14} />}>
-          Filter
+        {/* Add File Button */}
+        <SmallButton 
+          variant="secondary" 
+          icon={<SvgIcon src="/central_icons/Add File.svg" alt="Add file" width={14} height={14} className="text-fg-subtle" />}
+        >
+          Add file
         </SmallButton>
         
-        {/* Manage Columns Button */}
-        <SmallButton icon={<Cog size={14} />}>
-          Manage columns
+        {/* Add Column Button */}
+        <SmallButton 
+          variant="secondary" 
+          icon={<SvgIcon src="/central_icons/Add Column.svg" alt="Add column" width={14} height={14} className="text-fg-subtle" />}
+        >
+          Add column
         </SmallButton>
         
         {/* Separator */}
@@ -78,46 +83,46 @@ export default function ReviewTableToolbar({
         <div className="flex items-center gap-1">
           <button 
             onClick={() => handleAlignmentChange('top')}
-            className={`p-2 rounded-md transition-colors ${
+            className={`w-6 h-6 flex items-center justify-center rounded-[6px] transition-colors ${
               alignment === 'top' ? 'bg-bg-subtle-pressed text-fg-base hover:bg-bg-component' : 'text-fg-subtle hover:bg-bg-subtle'
             }`}
             title="Top align"
           >
-            <img 
+            <SvgIcon 
               src={alignment === 'top' ? '/top-align-filled.svg' : '/top-align-outline.svg'} 
               alt="Top align" 
-              width={16} 
-              height={16} 
+              width={14} 
+              height={14} 
             />
           </button>
           
           <button 
             onClick={() => handleAlignmentChange('center')}
-            className={`p-2 rounded-md transition-colors ${
+            className={`w-6 h-6 flex items-center justify-center rounded-[6px] transition-colors ${
               alignment === 'center' ? 'bg-bg-subtle-pressed text-fg-base hover:bg-bg-component' : 'text-fg-subtle hover:bg-bg-subtle'
             }`}
             title="Center align"
           >
-            <img 
+            <SvgIcon 
               src={alignment === 'center' ? '/center-align-filled.svg' : '/center-align-outline.svg'} 
               alt="Center align" 
-              width={16} 
-              height={16} 
+              width={14} 
+              height={14} 
             />
           </button>
           
           <button 
             onClick={() => handleAlignmentChange('bottom')}
-            className={`p-2 rounded-md transition-colors ${
+            className={`w-6 h-6 flex items-center justify-center rounded-[6px] transition-colors ${
               alignment === 'bottom' ? 'bg-bg-subtle-pressed text-fg-base hover:bg-bg-component' : 'text-fg-subtle hover:bg-bg-subtle'
             }`}
             title="Bottom align"
           >
-            <img 
+            <SvgIcon 
               src={alignment === 'bottom' ? '/bottom-align-filled.svg' : '/bottom-align-outline.svg'} 
               alt="Bottom align" 
-              width={16} 
-              height={16} 
+              width={14} 
+              height={14} 
             />
           </button>
         </div>
@@ -129,31 +134,31 @@ export default function ReviewTableToolbar({
         <div className="flex items-center gap-1">
           <button 
             onClick={() => handleTextWrapChange(false)}
-            className={`p-2 rounded-md transition-colors ${
+            className={`w-6 h-6 flex items-center justify-center rounded-[6px] transition-colors ${
               !textWrap ? 'bg-bg-subtle-pressed text-fg-base hover:bg-bg-component' : 'text-fg-subtle hover:bg-bg-subtle'
             }`}
             title="Text overflow"
           >
-            <img 
+            <SvgIcon 
               src="/overflow.svg" 
               alt="Text overflow" 
-              width={16} 
-              height={16} 
+              width={14} 
+              height={14} 
             />
           </button>
           
           <button 
             onClick={() => handleTextWrapChange(true)}
-            className={`p-2 rounded-md transition-colors ${
+            className={`w-6 h-6 flex items-center justify-center rounded-[6px] transition-colors ${
               textWrap ? 'bg-bg-subtle-pressed text-fg-base hover:bg-bg-component' : 'text-fg-subtle hover:bg-bg-subtle'
             }`}
             title="Text wrapping"
           >
-            <img 
+            <SvgIcon 
               src="/wrapping.svg" 
               alt="Text wrapping" 
-              width={16} 
-              height={16} 
+              width={14} 
+              height={14} 
             />
           </button>
         </div>
@@ -165,31 +170,31 @@ export default function ReviewTableToolbar({
         <div className="flex items-center gap-1">
           <button 
             onClick={() => setTextLength('concise')}
-            className={`p-2 rounded-md transition-colors ${
+            className={`w-6 h-6 flex items-center justify-center rounded-[6px] transition-colors ${
               textLength === 'concise' ? 'bg-bg-subtle-pressed text-fg-base hover:bg-bg-component' : 'text-fg-subtle hover:bg-bg-subtle'
             }`}
             title="Concise"
           >
-            <img 
+            <SvgIcon 
               src="/concise.svg" 
               alt="Concise" 
-              width={16} 
-              height={16} 
+              width={14} 
+              height={14} 
             />
           </button>
           
           <button 
             onClick={() => setTextLength('extend')}
-            className={`p-2 rounded-md transition-colors ${
+            className={`w-6 h-6 flex items-center justify-center rounded-[6px] transition-colors ${
               textLength === 'extend' ? 'bg-bg-subtle-pressed text-fg-base hover:bg-bg-component' : 'text-fg-subtle hover:bg-bg-subtle'
             }`}
             title="Extend"
           >
-            <img 
+            <SvgIcon 
               src="/extend.svg" 
               alt="Extend" 
-              width={16} 
-              height={16} 
+              width={14} 
+              height={14} 
             />
           </button>
         </div>
@@ -200,14 +205,14 @@ export default function ReviewTableToolbar({
         <button 
           onClick={chatOpen ? onCloseArtifact : undefined}
           disabled={!chatOpen}
-          className={`p-2 rounded-md transition-colors ${
+          className={`w-6 h-6 flex items-center justify-center rounded-[6px] transition-colors ${
             chatOpen 
               ? 'hover:bg-bg-subtle text-fg-subtle' 
               : 'text-fg-disabled cursor-not-allowed'
           }`}
           title={chatOpen ? "Close" : "Open assistant to close artifact"}
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M18 6L6 18"/>
             <path d="M6 6l12 12"/>
           </svg>

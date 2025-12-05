@@ -1,8 +1,6 @@
 "use client";
 
 import { 
-  ChevronsLeft, 
-  ChevronsRight, 
   Bold, 
   Italic, 
   Strikethrough, 
@@ -21,6 +19,8 @@ import {
   Code
 } from "lucide-react";
 import { Editor } from '@tiptap/react';
+import { SmallButton } from "@/components/ui/button";
+import { SvgIcon } from "@/components/svg-icon";
 
 interface DraftDocumentToolbarProps {
   chatOpen: boolean;
@@ -74,20 +74,25 @@ export default function DraftDocumentToolbar({ chatOpen, onToggleChat, onCloseAr
   };
 
   return (
-    <div className="px-3 py-2 border-b border-border-base bg-bg-base flex items-center justify-between overflow-x-auto" style={{ minHeight: '52px' }}>
+    <div className="px-3 py-2 border-b border-border-base bg-bg-base flex items-center justify-between overflow-x-auto" style={{ minHeight: '42px' }}>
       <div className="flex items-center gap-1">
         {/* Toggle Chat Button */}
-        <button 
+        <SmallButton
           onClick={onToggleChat}
-          className="p-2 rounded-md transition-colors hover:bg-bg-subtle text-fg-subtle"
-          title={chatOpen ? "Hide assistant" : "Show assistant"}
+          variant="secondary"
+          className={chatOpen ? "bg-bg-subtle" : ""}
+          icon={
+            <SvgIcon 
+              src={chatOpen ? "/central_icons/Assistant - Filled.svg" : "/central_icons/Assistant.svg"}
+              alt="Harvey" 
+              width={14} 
+              height={14} 
+              className={chatOpen ? "text-fg-base" : "text-fg-subtle"}
+            />
+          }
         >
-          {chatOpen ? (
-            <ChevronsLeft size={16} />
-          ) : (
-            <ChevronsRight size={16} />
-          )}
-        </button>
+          Ask Harvey
+        </SmallButton>
         
         {/* Separator */}
         <div className="w-px bg-bg-subtle-pressed" style={{ height: '20px' }}></div>
@@ -97,67 +102,67 @@ export default function DraftDocumentToolbar({ chatOpen, onToggleChat, onCloseAr
           {/* Bold */}
           <button 
             onClick={() => editor.chain().focus().toggleBold().run()}
-            className={`p-2 rounded-md transition-colors ${
+            className={`w-6 h-6 flex items-center justify-center rounded-[6px] transition-colors ${
               editor.isActive('bold') ? 'bg-bg-subtle-pressed text-fg-base hover:bg-bg-component' : 'text-fg-subtle hover:bg-bg-subtle'
             }`}
             title="Bold (Cmd+B)"
           >
-            <Bold size={16} />
+            <Bold size={14} />
           </button>
 
           {/* Italic */}
           <button 
             onClick={() => editor.chain().focus().toggleItalic().run()}
-            className={`p-2 rounded-md transition-colors ${
+            className={`w-6 h-6 flex items-center justify-center rounded-[6px] transition-colors ${
               editor.isActive('italic') ? 'bg-bg-subtle-pressed text-fg-base hover:bg-bg-component' : 'text-fg-subtle hover:bg-bg-subtle'
             }`}
             title="Italic (Cmd+I)"
           >
-            <Italic size={16} />
+            <Italic size={14} />
           </button>
 
           {/* Underline */}
           <button 
             onClick={() => editor.chain().focus().toggleUnderline().run()}
-            className={`p-2 rounded-md transition-colors ${
+            className={`w-6 h-6 flex items-center justify-center rounded-[6px] transition-colors ${
               editor.isActive('underline') ? 'bg-bg-subtle-pressed text-fg-base hover:bg-bg-component' : 'text-fg-subtle hover:bg-bg-subtle'
             }`}
             title="Underline (Cmd+U)"
           >
-            <UnderlineIcon size={16} />
+            <UnderlineIcon size={14} />
           </button>
 
           {/* Strikethrough */}
           <button 
             onClick={() => editor.chain().focus().toggleStrike().run()}
-            className={`p-2 rounded-md transition-colors ${
+            className={`w-6 h-6 flex items-center justify-center rounded-[6px] transition-colors ${
               editor.isActive('strike') ? 'bg-bg-subtle-pressed text-fg-base hover:bg-bg-component' : 'text-fg-subtle hover:bg-bg-subtle'
             }`}
             title="Strikethrough"
           >
-            <Strikethrough size={16} />
+            <Strikethrough size={14} />
           </button>
 
           {/* Code */}
           <button 
             onClick={() => editor.chain().focus().toggleCode().run()}
-            className={`p-2 rounded-md transition-colors ${
+            className={`w-6 h-6 flex items-center justify-center rounded-[6px] transition-colors ${
               editor.isActive('code') ? 'bg-bg-subtle-pressed text-fg-base hover:bg-bg-component' : 'text-fg-subtle hover:bg-bg-subtle'
             }`}
             title="Code"
           >
-            <Code size={16} />
+            <Code size={14} />
           </button>
 
           {/* Link */}
           <button 
             onClick={setLink}
-            className={`p-2 rounded-md transition-colors ${
+            className={`w-6 h-6 flex items-center justify-center rounded-[6px] transition-colors ${
               editor.isActive('link') ? 'bg-bg-subtle-pressed text-fg-base hover:bg-bg-component' : 'text-fg-subtle hover:bg-bg-subtle'
             }`}
             title="Add Link"
           >
-            <Link size={16} />
+            <Link size={14} />
           </button>
         </div>
 
@@ -168,32 +173,32 @@ export default function DraftDocumentToolbar({ chatOpen, onToggleChat, onCloseAr
         <div className="flex items-center gap-1">
           <button 
             onClick={() => editor.chain().focus().setTextAlign('left').run()}
-            className={`p-2 rounded-md transition-colors ${
+            className={`w-6 h-6 flex items-center justify-center rounded-[6px] transition-colors ${
               editor.isActive({ textAlign: 'left' }) || (!editor.isActive({ textAlign: 'center' }) && !editor.isActive({ textAlign: 'right' })) ? 'bg-bg-subtle-pressed text-fg-base hover:bg-bg-component' : 'text-fg-subtle hover:bg-bg-subtle'
             }`}
             title="Align Left"
           >
-            <AlignLeft size={16} />
+            <AlignLeft size={14} />
           </button>
 
           <button 
             onClick={() => editor.chain().focus().setTextAlign('center').run()}
-            className={`p-2 rounded-md transition-colors ${
+            className={`w-6 h-6 flex items-center justify-center rounded-[6px] transition-colors ${
               editor.isActive({ textAlign: 'center' }) ? 'bg-bg-subtle-pressed text-fg-base hover:bg-bg-component' : 'text-fg-subtle hover:bg-bg-subtle'
             }`}
             title="Align Center"
           >
-            <AlignCenter size={16} />
+            <AlignCenter size={14} />
           </button>
 
           <button 
             onClick={() => editor.chain().focus().setTextAlign('right').run()}
-            className={`p-2 rounded-md transition-colors ${
+            className={`w-6 h-6 flex items-center justify-center rounded-[6px] transition-colors ${
               editor.isActive({ textAlign: 'right' }) ? 'bg-bg-subtle-pressed text-fg-base hover:bg-bg-component' : 'text-fg-subtle hover:bg-bg-subtle'
             }`}
             title="Align Right"
           >
-            <AlignRight size={16} />
+            <AlignRight size={14} />
           </button>
         </div>
 
@@ -204,22 +209,22 @@ export default function DraftDocumentToolbar({ chatOpen, onToggleChat, onCloseAr
         <div className="flex items-center gap-1">
           <button 
             onClick={() => editor.chain().focus().toggleBulletList().run()}
-            className={`p-2 rounded-md transition-colors ${
+            className={`w-6 h-6 flex items-center justify-center rounded-[6px] transition-colors ${
               editor.isActive('bulletList') ? 'bg-bg-subtle-pressed text-fg-base hover:bg-bg-component' : 'text-fg-subtle hover:bg-bg-subtle'
             }`}
             title="Bullet List"
           >
-            <List size={16} />
+            <List size={14} />
           </button>
 
           <button 
             onClick={() => editor.chain().focus().toggleOrderedList().run()}
-            className={`p-2 rounded-md transition-colors ${
+            className={`w-6 h-6 flex items-center justify-center rounded-[6px] transition-colors ${
               editor.isActive('orderedList') ? 'bg-bg-subtle-pressed text-fg-base hover:bg-bg-component' : 'text-fg-subtle hover:bg-bg-subtle'
             }`}
             title="Numbered List"
           >
-            <ListOrdered size={16} />
+            <ListOrdered size={14} />
           </button>
         </div>
 
@@ -230,26 +235,26 @@ export default function DraftDocumentToolbar({ chatOpen, onToggleChat, onCloseAr
         <div className="flex items-center gap-1">
           <button 
             onClick={handleCopy}
-            className="p-2 rounded-md transition-colors hover:bg-bg-subtle text-fg-subtle"
+            className="w-6 h-6 flex items-center justify-center rounded-[6px] transition-colors hover:bg-bg-subtle text-fg-subtle"
             title="Copy (Cmd+C)"
           >
-            <Copy size={16} />
+            <Copy size={14} />
           </button>
 
           <button 
             onClick={handleCut}
-            className="p-2 rounded-md transition-colors hover:bg-bg-subtle text-fg-subtle"
+            className="w-6 h-6 flex items-center justify-center rounded-[6px] transition-colors hover:bg-bg-subtle text-fg-subtle"
             title="Cut (Cmd+X)"
           >
-            <Scissors size={16} />
+            <Scissors size={14} />
           </button>
 
           <button 
             onClick={handlePaste}
-            className="p-2 rounded-md transition-colors hover:bg-bg-subtle text-fg-subtle"
+            className="w-6 h-6 flex items-center justify-center rounded-[6px] transition-colors hover:bg-bg-subtle text-fg-subtle"
             title="Paste (Cmd+V)"
           >
-            <Clipboard size={16} />
+            <Clipboard size={14} />
           </button>
         </div>
 
@@ -261,27 +266,27 @@ export default function DraftDocumentToolbar({ chatOpen, onToggleChat, onCloseAr
           <button 
             onClick={() => editor.chain().focus().undo().run()}
             disabled={!editor.can().undo()}
-            className={`p-2 rounded-md transition-colors ${
+            className={`w-6 h-6 flex items-center justify-center rounded-[6px] transition-colors ${
               editor.can().undo() 
                 ? 'hover:bg-bg-subtle text-fg-subtle' 
                 : 'text-fg-disabled cursor-not-allowed'
             }`}
             title="Undo (Cmd+Z)"
           >
-            <Undo size={16} />
+            <Undo size={14} />
           </button>
 
           <button 
             onClick={() => editor.chain().focus().redo().run()}
             disabled={!editor.can().redo()}
-            className={`p-2 rounded-md transition-colors ${
+            className={`w-6 h-6 flex items-center justify-center rounded-[6px] transition-colors ${
               editor.can().redo() 
                 ? 'hover:bg-bg-subtle text-fg-subtle' 
                 : 'text-fg-disabled cursor-not-allowed'
             }`}
             title="Redo (Cmd+Shift+Z)"
           >
-            <Redo size={16} />
+            <Redo size={14} />
           </button>
         </div>
       </div>
@@ -291,14 +296,14 @@ export default function DraftDocumentToolbar({ chatOpen, onToggleChat, onCloseAr
         <button 
           onClick={chatOpen ? onCloseArtifact : undefined}
           disabled={!chatOpen}
-          className={`p-2 rounded-md transition-colors ${
+          className={`w-6 h-6 flex items-center justify-center rounded-[6px] transition-colors ${
             chatOpen 
               ? 'hover:bg-bg-subtle text-fg-subtle' 
               : 'text-fg-disabled cursor-not-allowed'
           }`}
           title={chatOpen ? "Close" : "Open assistant to close artifact"}
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M18 6L6 18"/>
             <path d="M6 6l12 12"/>
           </svg>

@@ -2,10 +2,28 @@ import tailwindcssAnimate from "tailwindcss-animate";
 
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: "class",
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+  ],
+  safelist: [
+    'bg-button-inverted',
+    'bg-button-inverted-hover',
+    'bg-button-inverted-pressed',
+    'bg-button-neutral',
+    'bg-button-neutral-hover',
+    'bg-button-neutral-pressed',
+    'bg-button-danger',
+    'bg-button-danger-hover',
+    'bg-button-danger-pressed',
+    'hover:bg-button-inverted-hover',
+    'hover:bg-button-neutral-hover',
+    'hover:bg-button-danger-hover',
+    'active:bg-button-inverted-pressed',
+    'active:bg-button-neutral-pressed',
+    'active:bg-button-danger-pressed',
   ],
   theme: {
     extend: {
@@ -80,6 +98,21 @@ export default {
           "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))"
+        },
+        "button-inverted": {
+          DEFAULT: "var(--button-inverted)",
+          hover: "var(--button-inverted-hover)",
+          pressed: "var(--button-inverted-pressed)"
+        },
+        "button-neutral": {
+          DEFAULT: "var(--button-neutral)",
+          hover: "var(--button-neutral-hover)",
+          pressed: "var(--button-neutral-pressed)"
+        },
+        "button-danger": {
+          DEFAULT: "var(--button-danger)",
+          hover: "var(--button-danger-hover)",
+          pressed: "var(--button-danger-pressed)"
         }
       },
       borderRadius: {

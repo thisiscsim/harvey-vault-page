@@ -149,13 +149,15 @@ export function AppSidebar() {
           selectedItem === item.title ? "bg-bg-subtle-pressed hover:bg-bg-subtle-pressed" : "hover:bg-bg-subtle-hover"
         )}
       >
-        <SvgIcon
-          src={selectedItem === item.title ? item.iconFilled : item.iconOutline}
-          alt={item.title}
-          width={18}
-          height={18}
-          className={selectedItem === item.title ? "text-fg-base" : "text-fg-subtle"}
-        />
+        <div className="w-5 h-5 flex items-center justify-center shrink-0">
+          <SvgIcon
+            src={selectedItem === item.title ? item.iconFilled : item.iconOutline}
+            alt={item.title}
+            width={18}
+            height={18}
+            className={selectedItem === item.title ? "text-fg-base" : "text-fg-subtle"}
+          />
+        </div>
         {state === "expanded" && (
           <span className={selectedItem === item.title ? "text-fg-base" : "text-fg-subtle"}>{item.title}</span>
         )}
@@ -314,13 +316,15 @@ export function AppSidebar() {
                             isVaultItemActive ? "bg-bg-subtle-pressed hover:bg-bg-subtle-pressed" : "hover:bg-bg-subtle-hover"
                           )}
                         >
-                          <SvgIcon
-                            src={isVaultItemActive ? "/central_icons/Vault - Filled.svg" : "/central_icons/Vault.svg"}
-                            alt="Vault"
-                            width={18}
-                            height={18}
-                            className={isVaultItemActive ? "text-fg-base" : "text-fg-subtle"}
-                          />
+                          <div className="w-5 h-5 flex items-center justify-center shrink-0">
+                            <SvgIcon
+                              src={isVaultItemActive ? "/central_icons/Vault - Filled.svg" : "/central_icons/Vault.svg"}
+                              alt="Vault"
+                              width={18}
+                              height={18}
+                              className={isVaultItemActive ? "text-fg-base" : "text-fg-subtle"}
+                            />
+                          </div>
                           {state === "expanded" && (
                             <>
                               <span className={cn("flex-1", isVaultItemActive ? "text-fg-base" : "text-fg-subtle")}>Vault</span>

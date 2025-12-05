@@ -1318,15 +1318,15 @@ export default function AssistantChatPage({
                   {/* Left Controls - Icon buttons */}
                   <div className="flex items-center gap-1">
                     <button 
-                      className="w-9 h-9 flex items-center justify-center text-fg-muted hover:text-fg-subtle border border-border-strong rounded-lg hover:border-border-interactive transition-colors"
+                      className="w-8 h-8 flex items-center justify-center text-fg-muted hover:text-fg-subtle border border-border-strong rounded-md hover:border-border-interactive transition-colors"
                     >
-                      <Scale size={18} />
+                      <Scale size={16} />
                     </button>
                     <button 
                       onClick={() => setIsFileManagementOpen(true)}
-                      className="w-9 h-9 flex items-center justify-center text-fg-muted hover:text-fg-subtle border border-border-strong rounded-lg hover:border-border-interactive transition-colors"
+                      className="w-8 h-8 flex items-center justify-center text-fg-muted hover:text-fg-subtle border border-border-strong rounded-md hover:border-border-interactive transition-colors"
                     >
-                      <Paperclip size={18} />
+                      <Paperclip size={16} />
                     </button>
                   </div>
                   
@@ -1334,14 +1334,14 @@ export default function AssistantChatPage({
                   <div className="flex items-center gap-2">
                     {/* Ghost icon buttons container */}
                     <div className="flex items-center">
-                      <button className="w-9 h-9 flex items-center justify-center text-fg-muted hover:text-fg-subtle hover:bg-bg-subtle-pressed rounded-lg transition-colors">
-                        <Mic size={18} />
+                      <button className="w-8 h-8 flex items-center justify-center text-fg-muted hover:text-fg-subtle hover:bg-bg-subtle-pressed rounded-md transition-colors">
+                        <Mic size={16} />
                       </button>
-                      <button className="w-9 h-9 flex items-center justify-center text-fg-muted hover:text-fg-subtle hover:bg-bg-subtle-pressed rounded-lg transition-colors">
-                        <SlidersHorizontal size={18} />
+                      <button className="w-8 h-8 flex items-center justify-center text-fg-muted hover:text-fg-subtle hover:bg-bg-subtle-pressed rounded-md transition-colors">
+                        <SlidersHorizontal size={16} />
                       </button>
-                      <button className="w-9 h-9 flex items-center justify-center text-fg-muted hover:text-fg-subtle hover:bg-bg-subtle-pressed rounded-lg transition-colors">
-                        <ListPlus size={18} />
+                      <button className="w-8 h-8 flex items-center justify-center text-fg-muted hover:text-fg-subtle hover:bg-bg-subtle-pressed rounded-md transition-colors">
+                        <ListPlus size={16} />
                       </button>
                     </div>
                     
@@ -1349,25 +1349,22 @@ export default function AssistantChatPage({
                     {isLoading ? (
                       <button
                         disabled
-                        className="h-9 flex items-center justify-center bg-bg-interactive text-white rounded-lg transition-all cursor-not-allowed"
-                        style={{ width: '44px' }}
+                        className="w-8 h-8 flex items-center justify-center bg-bg-interactive text-white rounded-md transition-all cursor-not-allowed"
                       >
                         <Spinner size="sm" />
                       </button>
                     ) : inputValue.trim() ? (
                       <button
                         onClick={() => sendMessage()}
-                        className="h-9 flex items-center justify-center bg-bg-interactive text-white rounded-lg hover:bg-bg-interactive transition-all"
-                        style={{ width: '44px' }}
+                        className="w-8 h-8 flex items-center justify-center bg-bg-interactive text-white rounded-md hover:bg-bg-interactive transition-all"
                       >
-                        <CornerDownLeft size={18} />
+                        <CornerDownLeft size={16} />
                       </button>
                     ) : (
                       <button
-                        className="h-9 flex items-center justify-center bg-bg-subtle-pressed text-fg-subtle rounded-lg hover:bg-bg-component transition-all"
-                        style={{ width: '44px' }}
+                        className="w-8 h-8 flex items-center justify-center bg-bg-subtle-pressed text-fg-subtle rounded-md hover:bg-bg-component transition-all"
                       >
-                        <AudioLines size={20} />
+                        <AudioLines size={18} />
                       </button>
                     )}
                   </div>
