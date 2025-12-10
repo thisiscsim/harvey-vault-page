@@ -12,8 +12,9 @@ export interface Workflow {
 // Draft: 14, Output: 15, Review: 13
 
 export const draftItems: Workflow[] = [
-  { id: 1, title: 'Draft a client alert', type: 'Draft', steps: '5 steps', description: 'Create professional client communications' },
-  { id: 2, title: 'Draft board resolutions', type: 'Draft', steps: '6 steps', description: 'Create corporate board meeting resolutions' },
+  { id: 1, title: 'Draft S-1 Risk Factors', type: 'Draft', steps: '4 steps', description: 'Create comprehensive risk factors for S-1' },
+  { id: 2, title: 'Draft a client alert', type: 'Draft', steps: '5 steps', description: 'Create professional client communications' },
+  { id: 14, title: 'Draft board resolutions', type: 'Draft', steps: '6 steps', description: 'Create corporate board meeting resolutions' },
   { id: 3, title: 'Draft employment agreements', type: 'Draft', steps: '7 steps', description: 'Create executive employment contracts' },
   { id: 4, title: 'Draft legal opinion memorandum', type: 'Draft', steps: '8 steps', description: 'Prepare detailed legal analysis memo' },
   { id: 5, title: 'Draft real estate purchase agreement', type: 'Draft', steps: '9 steps', description: 'Create property acquisition contracts' },

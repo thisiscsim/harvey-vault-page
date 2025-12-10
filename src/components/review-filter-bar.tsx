@@ -159,13 +159,13 @@ const SortableColumnItem = ({
       <div className="flex items-center gap-2">
         <button
           onClick={() => onToggleVisibility(column.id)}
-          className={`w-3.5 h-3.5 rounded-sm border flex items-center justify-center transition-colors ${
+          className={`w-3.5 h-3.5 rounded-[3px] border flex items-center justify-center transition-colors ${
             column.visible 
-              ? 'bg-fg-base border-fg-base' 
-              : 'border-border-base bg-transparent'
+              ? 'bg-bg-interactive border-border-interactive' 
+              : 'border-border-base bg-transparent hover:border-border-strong'
           }`}
         >
-          {column.visible && <Check size={10} className="text-bg-base" />}
+          {column.visible && <Check size={10} className="text-fg-on-color" />}
         </button>
         <span className="text-xs text-fg-base">{column.header}</span>
       </div>

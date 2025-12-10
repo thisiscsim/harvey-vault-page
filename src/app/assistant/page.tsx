@@ -50,6 +50,24 @@ export default function AssistantHomePage() {
     }
   };
 
+  const handleWorkflowClick = (workflowTitle: string) => {
+    setIsLoading(true);
+    
+    // Generate a URL-friendly ID from the workflow title
+    const chatId = workflowTitle
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .substring(0, 50);
+    
+    // Set flags in sessionStorage to indicate we're coming from the homepage with a workflow
+    sessionStorage.setItem('fromAssistantHomepage', 'true');
+    sessionStorage.setItem('isWorkflowInitiated', 'true');
+    
+    // Navigate to the chat page with the workflow title as the initial message
+    router.push(`/assistant/${chatId}?initialMessage=${encodeURIComponent(workflowTitle)}&isWorkflow=true`);
+  };
+
   // Handle scroll events for workflow animation
   useEffect(() => {
     // Get the scroll container
@@ -474,6 +492,7 @@ export default function AssistantHomePage() {
                   return (
                     <button
                       key={workflow.id}
+                      onClick={() => handleWorkflowClick(workflow.title)}
                       className="p-4 bg-bg-subtle rounded-lg hover:bg-bg-subtle-hover transition-all text-left overflow-hidden"
                       style={{
                         transitionDuration: '500ms',
@@ -537,6 +556,7 @@ export default function AssistantHomePage() {
                 return (
                   <button
                     key={workflow.id}
+                    onClick={() => handleWorkflowClick(workflow.title)}
                     className="p-4 bg-bg-subtle rounded-lg hover:bg-bg-subtle-hover transition-all text-left overflow-hidden"
                     style={{
                       opacity,

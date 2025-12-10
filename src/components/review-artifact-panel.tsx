@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { UserPlus, Download, GripVertical, ArrowLeft, Layers, UserPlus as UserPlusIcon, Check } from "lucide-react";
+import { GripVertical, ArrowLeft, Layers, UserPlus, Check, X, Download } from "lucide-react";
 import {
   createColumnHelper,
   flexRender,
@@ -12,7 +12,7 @@ import {
   RowData,
 } from '@tanstack/react-table';
 import ReviewTableToolbar from "@/components/review-table-toolbar";
-import { Button } from "@/components/ui/button";
+import { Button, SmallButton } from "@/components/ui/button";
 import ReviewFilterBar, { FilterableColumn, DisplayColumn } from "@/components/review-filter-bar";
 import ShareArtifactDialog from "@/components/share-artifact-dialog";
 import ExportReviewDialog from "@/components/export-review-dialog";
@@ -221,6 +221,9 @@ interface ReviewArtifactPanelProps {
   onFilesSelected?: (files: SelectedFile[]) => void;
 }
 
+// Stable empty array to avoid re-renders when selectedFiles prop is not provided
+const EMPTY_FILES_ARRAY: SelectedFile[] = [];
+
 const PANEL_ANIMATION = {
   duration: 0.3,
   ease: "easeOut" as const
@@ -243,7 +246,7 @@ export default function ReviewArtifactPanel({
   artifactTitleInputRef,
   isEmpty = false,
   showBackButton = false,
-  selectedFiles = [],
+  selectedFiles = EMPTY_FILES_ARRAY,
   onFilesSelected
 }: ReviewArtifactPanelProps) {
   const [alignment, setAlignment] = React.useState<'top' | 'center' | 'bottom'>('center');
@@ -260,7 +263,17 @@ export default function ReviewArtifactPanel({
   const [manageGroupedFilesAnchor, setManageGroupedFilesAnchor] = React.useState<HTMLElement | null>(null);
   const [addColumnPopoverOpen, setAddColumnPopoverOpen] = React.useState(false);
   const fileColumnRef = React.useRef<HTMLTableCellElement>(null);
+  const tableContainerRef = React.useRef<HTMLDivElement>(null);
   const [addColumnPopoverPosition, setAddColumnPopoverPosition] = React.useState({ top: 0, left: 0 });
+  
+  // File grouping animation state
+  const [isGroupingFiles, setIsGroupingFiles] = React.useState(false);
+  const groupingTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+  const [groupingOverlayDimensions, setGroupingOverlayDimensions] = React.useState({ width: 0, height: 0, left: 0, top: 0 });
+  
+  // Grouping acceptance state
+  const [pendingGroupRowId, setPendingGroupRowId] = React.useState<number | null>(null);
+  const preGroupingDataRef = React.useRef<Document[] | null>(null);
   
   // Add column popover state
   const [columnQuestion, setColumnQuestion] = React.useState('');
@@ -633,6 +646,92 @@ export default function ReviewArtifactPanel({
     setSelectedRows(new Set());
   }, []);
   
+  // Handle accepting the grouped files
+  const handleAcceptGrouping = React.useCallback(() => {
+    setPendingGroupRowId(null);
+    preGroupingDataRef.current = null;
+    setSelectedRows(new Set());
+  }, []);
+  
+  // Handle rejecting the grouped files - revert to original data
+  const handleRejectGrouping = React.useCallback(() => {
+    if (preGroupingDataRef.current) {
+      setTableData(preGroupingDataRef.current);
+    }
+    setPendingGroupRowId(null);
+    preGroupingDataRef.current = null;
+    setSelectedRows(new Set());
+  }, []);
+  
+  // Handle automated file grouping (toolbar button)
+  const handleAutomatedGrouping = React.useCallback(() => {
+    if (isGroupingFiles) return;
+    
+    // Save current data before grouping
+    preGroupingDataRef.current = [...tableData];
+    
+    setIsGroupingFiles(true);
+    
+    // Clear any existing timeout
+    if (groupingTimeoutRef.current) {
+      clearTimeout(groupingTimeoutRef.current);
+    }
+    
+    // After 10 seconds, stop the grouping animation and group ValarAI files
+    groupingTimeoutRef.current = setTimeout(() => {
+      setIsGroupingFiles(false);
+      
+      // Find all files that start with "ValarAI_" and group them
+      const currentData = preGroupingDataRef.current || tableData;
+      const valarAIFiles = currentData.filter(row => row.fileName.startsWith('ValarAI_'));
+      
+      if (valarAIFiles.length <= 1) {
+        // Nothing to group
+        return;
+      }
+      
+      // Keep the first ValarAI file and add grouped count
+      const firstValarAI = valarAIFiles[0];
+      const groupedCount = valarAIFiles.length - 1;
+      
+      // Create the grouped row
+      const groupedRow = {
+        ...firstValarAI,
+        groupedCount: (firstValarAI.groupedCount || 0) + groupedCount
+      };
+      
+      // Get all non-ValarAI files
+      const otherFiles = currentData.filter(row => !row.fileName.startsWith('ValarAI_'));
+      
+      // Update all states separately
+      setTableData([groupedRow, ...otherFiles]);
+      setPendingGroupRowId(firstValarAI.id);
+      setSelectedRows(new Set([firstValarAI.id]));
+    }, 10000);
+  }, [isGroupingFiles, tableData]);
+  
+  // Update grouping overlay dimensions when grouping starts or table changes
+  React.useEffect(() => {
+    if (isGroupingFiles && tableContainerRef.current) {
+      const container = tableContainerRef.current;
+      const table = container.querySelector('table');
+      if (table) {
+        // Get the select column and fileName column widths
+        const selectColumn = table.querySelector('colgroup col:nth-child(1)');
+        const fileColumn = table.querySelector('colgroup col:nth-child(2)');
+        const selectWidth = selectColumn ? parseInt(getComputedStyle(selectColumn).width) || 48 : 48;
+        const fileWidth = fileColumn ? parseInt(getComputedStyle(fileColumn).width) || 220 : 220;
+        // Get header height (32px default)
+        const thead = table.querySelector('thead');
+        const headerHeight = thead ? thead.offsetHeight : 32;
+        // Height is table height minus header
+        const height = table.offsetHeight - headerHeight;
+        
+        setGroupingOverlayDimensions({ width: fileWidth, height, left: selectWidth, top: headerHeight });
+      }
+    }
+  }, [isGroupingFiles, tableData]);
+  
   // Check if all rows are selected
   const isAllSelected = selectedRows.size === data.length && selectedRows.size > 0;
   
@@ -691,21 +790,39 @@ export default function ReviewArtifactPanel({
       cell: ({ row }) => {
         const isHovered = hoveredRow === row.original.id;
         const hasGroupedFiles = row.original.groupedCount && row.original.groupedCount > 0;
+        const isPendingAcceptance = pendingGroupRowId === row.original.id;
         
         return (
           <div className='flex items-center gap-1.5 relative'>
-            <div className='flex items-center gap-1.5 flex-1 min-w-0'>
-              <PdfHarveyIcon className='h-[14px] w-[14px] flex-shrink-0' />
-              <span className='truncate border-b border-border-base text-fg-base'>{row.original.fileName}</span>
+            <div className={`flex items-center gap-1.5 ${hasGroupedFiles ? 'text-ui-violet-fg' : 'flex-1 min-w-0'}`}>
+              {hasGroupedFiles ? (
+                <SvgIcon 
+                  src="/central_icons/Database - Filled.svg" 
+                  alt="Grouped files" 
+                  width={14} 
+                  height={14}
+                  className="text-ui-violet-fg"
+                />
+              ) : (
+                <PdfHarveyIcon className='h-[14px] w-[14px] shrink-0' />
+              )}
+              <span className={`${hasGroupedFiles ? 'text-ui-violet-fg font-medium' : 'truncate border-b border-border-base text-fg-base'}`}>{row.original.fileName}</span>
             </div>
             {hasGroupedFiles && (
-              <span className='px-1.5 py-0.5 bg-bg-subtle-pressed text-fg-subtle rounded text-xs font-medium flex-shrink-0'>
+              <span 
+                className='bg-ui-violet-bg text-ui-violet-fg font-medium shrink-0'
+                style={{ 
+                  padding: '0 3px',
+                  fontSize: '12px',
+                  borderRadius: '4px'
+                }}
+              >
                 +{row.original.groupedCount}
               </span>
             )}
             
             {/* Hover Control Bar */}
-            {isHovered && (
+            {isHovered && !isPendingAcceptance && (
               <div 
                 className='absolute right-0 flex items-center gap-0.5 bg-bg-base rounded-md p-0.5 shadow-md border border-border-base'
               >
@@ -737,7 +854,7 @@ export default function ReviewArtifactPanel({
                     className='p-1.5 hover:bg-bg-subtle rounded transition-colors text-fg-subtle'
                     title="Assign"
                   >
-                    <UserPlusIcon size={14} />
+                    <UserPlus size={14} />
                   </button>
                 </div>
             )}
@@ -745,7 +862,7 @@ export default function ReviewArtifactPanel({
         );
       },
     }),
-  ], [isAllSelected, toggleSelectAll, selectedRows, hoveredRow, toggleRowSelection]);
+  ], [isAllSelected, toggleSelectAll, selectedRows, hoveredRow, toggleRowSelection, pendingGroupRowId]);
   
   // Define query columns (only shown when query has been run)
   const queryColumns = React.useMemo(() => [
@@ -759,10 +876,10 @@ export default function ReviewArtifactPanel({
             {(isHovered || isDragging) ? (
               <GripVertical 
                 size={12} 
-                className="cursor-grab active:cursor-grabbing text-fg-muted hover:text-fg-subtle flex-shrink-0" 
+                className="cursor-grab active:cursor-grabbing text-fg-muted hover:text-fg-subtle shrink-0" 
               />
             ) : (
-              <TypeIcon className="flex-shrink-0" />
+              <TypeIcon className="shrink-0" />
             )}
             <span>Agreement Parties</span>
           </div>
@@ -800,10 +917,10 @@ export default function ReviewArtifactPanel({
             {(isHovered || isDragging) ? (
               <GripVertical 
                 size={12} 
-                className="cursor-grab active:cursor-grabbing text-fg-muted hover:text-fg-subtle flex-shrink-0" 
+                className="cursor-grab active:cursor-grabbing text-fg-muted hover:text-fg-subtle shrink-0" 
               />
             ) : (
-              <SelectionIcon className="flex-shrink-0" />
+              <SelectionIcon className="shrink-0" />
             )}
             <span className='truncate min-w-0'>Force Majeure Clause Reference</span>
           </div>
@@ -835,10 +952,10 @@ export default function ReviewArtifactPanel({
             {(isHovered || isDragging) ? (
               <GripVertical 
                 size={12} 
-                className="cursor-grab active:cursor-grabbing text-fg-muted hover:text-fg-subtle flex-shrink-0" 
+                className="cursor-grab active:cursor-grabbing text-fg-muted hover:text-fg-subtle shrink-0" 
               />
             ) : (
-              <TypeIcon className="flex-shrink-0" />
+              <TypeIcon className="shrink-0" />
             )}
             <span>Assignment Provision Summary</span>
           </div>
@@ -907,9 +1024,9 @@ export default function ReviewArtifactPanel({
             <div className='flex items-center gap-1 h-4 dynamic-column-header'>
               <GripVertical 
                 size={12} 
-                className="cursor-grab active:cursor-grabbing text-fg-muted hover:text-fg-subtle flex-shrink-0 grip-icon hidden" 
+                className="cursor-grab active:cursor-grabbing text-fg-muted hover:text-fg-subtle shrink-0 grip-icon hidden" 
               />
-              <TypeIcon className="flex-shrink-0 type-icon" />
+              <TypeIcon className="shrink-0 type-icon" />
               <span className="truncate">{col.header}</span>
             </div>
           );
@@ -1045,6 +1162,19 @@ export default function ReviewArtifactPanel({
               <Download size={16} className="text-fg-base" />
               <span className="text-sm font-normal">Export</span>
             </button>
+            {/* Close Button - only show when chat is open (artifact context) */}
+            {chatOpen && (
+              <button 
+                onClick={onClose}
+                className="w-8 h-8 flex items-center justify-center rounded-[8px] hover:bg-bg-subtle transition-colors text-fg-subtle"
+                title="Close artifact"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 6L6 18"/>
+                  <path d="M6 6l12 12"/>
+                </svg>
+              </button>
+            )}
           </div>
         </div>
 
@@ -1055,13 +1185,14 @@ export default function ReviewArtifactPanel({
             console.log('Toggle button clicked, current state:', chatOpen);
             onToggleChat(!chatOpen);
           }}
-          onCloseArtifact={onClose}
           alignment={alignment}
           onAlignmentChange={setAlignment}
           textWrap={textWrap}
           onTextWrapChange={setTextWrap}
           hasFiles={isFilesOnlyMode}
           onAddColumn={() => setAddColumnPopoverOpen(true)}
+          isGroupingFiles={isGroupingFiles}
+          onGroupFiles={handleAutomatedGrouping}
         />
         
         {/* Filter Bar */}
@@ -1137,7 +1268,7 @@ export default function ReviewArtifactPanel({
               <div className="border-b border-border-base">
                 <div className="flex items-center">
                   {/* Checkbox column */}
-                  <div className="w-[48px] h-8 flex items-center justify-center border-r border-border-base flex-shrink-0">
+                  <div className="w-[48px] h-8 flex items-center justify-center border-r border-border-base shrink-0">
                     <input type="checkbox" className="custom-checkbox" disabled />
                   </div>
                   
@@ -1155,7 +1286,7 @@ export default function ReviewArtifactPanel({
               <div className="border-b border-border-base bg-bg-base hover:bg-bg-base-hover transition-colors cursor-pointer">
                 <div className="flex items-center" style={{ height: '32px' }}>
                   {/* Plus icon in checkbox column */}
-                  <div className="w-[48px] h-full flex items-center justify-center border-r border-border-base flex-shrink-0 text-fg-subtle">
+                  <div className="w-[48px] h-full flex items-center justify-center border-r border-border-base shrink-0 text-fg-subtle">
                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M6 1V11M1 6H11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                     </svg>
@@ -1245,7 +1376,59 @@ export default function ReviewArtifactPanel({
           ) : (
             /* Table container */
             <div className="h-full relative">
-              <div className={`absolute inset-0 ${isFilesOnlyMode && dynamicColumns.length === 0 ? 'overflow-x-hidden' : 'overflow-x-auto'} overflow-y-auto`}>
+              <div 
+                ref={tableContainerRef}
+                className={`absolute inset-0 ${isFilesOnlyMode && dynamicColumns.length === 0 ? 'overflow-x-hidden' : 'overflow-x-auto'} overflow-y-auto`}
+              >
+              {/* Grouping Files Overlay */}
+              {isGroupingFiles && (
+                <div 
+                  className="absolute pointer-events-none z-30"
+                  style={{ 
+                    width: groupingOverlayDimensions.width,
+                    height: groupingOverlayDimensions.height || '100%',
+                    left: groupingOverlayDimensions.left,
+                    top: groupingOverlayDimensions.top
+                  }}
+                >
+                  {/* Solid border */}
+                  <div 
+                    className="absolute inset-0"
+                    style={{ 
+                      border: '2px solid var(--color-violet-600)',
+                      borderRadius: '8px'
+                    }}
+                  />
+                  
+                  {/* Shimmer gradient overlay */}
+                  <div 
+                    className="absolute inset-0 animate-grouping-shimmer"
+                    style={{ borderRadius: '8px' }}
+                  />
+                  
+                  {/* Label badge - positioned at top-left of overlay */}
+                  <div 
+                    className="absolute flex items-center gap-1.5 px-2 py-1 rounded-md font-medium text-fg-on-color"
+                    style={{ 
+                      top: '4px',
+                      left: '4px',
+                      backgroundColor: 'var(--color-violet-600)',
+                      fontSize: '12px',
+                      lineHeight: '16px',
+                      zIndex: 31,
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    <SvgIcon 
+                      src="/central_icons/Layers - Filled.svg" 
+                      alt="Layers" 
+                      width={14} 
+                      height={14}
+                    />
+                    <span>Grouping files...</span>
+                  </div>
+                </div>
+              )}
               <table 
               className={`border-separate border-spacing-0 ${
                 table.getState().columnSizingInfo.isResizingColumn ? 'select-none' : ''
@@ -1383,12 +1566,13 @@ export default function ReviewArtifactPanel({
                 {table.getRowModel().rows.map((row) => {
                   const isRowSelected = selectedRows.has(row.original.id);
                   const isRowHovered = hoveredRow === row.original.id;
+                  const isPendingAcceptanceRow = pendingGroupRowId === row.original.id;
                   return (
                     <tr 
                       key={row.id}
                       onMouseEnter={() => setHoveredRow(row.original.id)}
                       onMouseLeave={() => setHoveredRow(null)}
-                      className="transition-colors"
+                      className="transition-colors relative"
                     >
                       {row.getVisibleCells().map((cell, cellIndex) => {
                         const cellPadding =
@@ -1423,7 +1607,7 @@ export default function ReviewArtifactPanel({
                             cell.getContext()
                           )}
                           {/* Hover detection area extending to the right for files-only mode */}
-                          {shouldExtendBorder && (
+                          {shouldExtendBorder && !isPendingAcceptanceRow && (
                             <div 
                               className="absolute top-0 bottom-0 cursor-default"
                               style={{ 
@@ -1443,6 +1627,34 @@ export default function ReviewArtifactPanel({
               </tbody>
             </table>
               </div>
+              
+              {/* Pending Acceptance Buttons - fixed to right side of first row */}
+              {pendingGroupRowId !== null && (
+                <div 
+                  className="absolute flex items-center justify-end gap-2 px-3"
+                  style={{ 
+                    top: '32px', // Header height - aligns with first data row
+                    right: '0',
+                    height: '32px', // Match row height exactly
+                    zIndex: 40
+                  }}
+                >
+                  <SmallButton
+                    variant="secondary"
+                    onClick={handleRejectGrouping}
+                    icon={<X size={14} />}
+                  >
+                    Reject
+                  </SmallButton>
+                  <SmallButton
+                    variant="default"
+                    onClick={handleAcceptGrouping}
+                    icon={<Check size={14} />}
+                  >
+                    Accept
+                  </SmallButton>
+                </div>
+              )}
             </div>
           )}
         </div>

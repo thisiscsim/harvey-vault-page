@@ -960,3 +960,32 @@ th:has(.dynamic-column-header) {
     clip-path: inset(0 0 0 0);
   }
 }
+
+/* ========================================
+   FILE GROUPING ANIMATION
+   ======================================== */
+
+@keyframes grouping-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.animate-grouping-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(139, 92, 246, 0.05) 20%,
+    rgba(139, 92, 246, 0.12) 40%,
+    rgba(139, 92, 246, 0.18) 50%,
+    rgba(139, 92, 246, 0.12) 60%,
+    rgba(139, 92, 246, 0.05) 80%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: grouping-shimmer 2.5s ease-in-out infinite;
+}
+

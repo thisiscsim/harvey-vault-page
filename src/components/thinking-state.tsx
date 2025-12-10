@@ -25,6 +25,10 @@ export interface ThinkingStateProps {
    */
   additionalText?: string;
   /**
+   * Optional custom content to render instead of bullets/additionalText
+   */
+  customContent?: React.ReactNode;
+  /**
    * If true, the component starts expanded
    */
   defaultOpen?: boolean;
@@ -49,10 +53,21 @@ export interface ThinkingStateProps {
    * If true, shows a pulsing animation on the icon
    */
   isLoading?: boolean;
+  /**
+   * Optional custom icon component to use instead of variant-based icon
+   */
+  icon?: React.ComponentType<{ className?: string }>;
 }
 
-function getVariantIcon(isLoading?: boolean) {
-  // Always use the same brain icon regardless of variant
+function getVariantIcon(isLoading?: boolean, IconComponent?: React.ComponentType<{ className?: string }>) {
+  // Use custom icon if provided, otherwise default to brain icon
+  if (IconComponent) {
+    return (
+      <IconComponent 
+        className={`w-3.5 h-3.5 ${isLoading ? 'animate-pulse' : ''}`} 
+      />
+    );
+  }
   return (
     <Brain 
       className={`w-3.5 h-3.5 ${isLoading ? 'animate-pulse' : ''}`} 
@@ -80,6 +95,7 @@ export default function ThinkingState({
   summary,
   bullets,
   additionalText,
+  customContent,
   defaultOpen = false,
   timingData = {
     model: "Claude 4 Sonnet",
@@ -100,6 +116,7 @@ export default function ThinkingState({
   isChild = false,
   childStates = [],
   isLoading = false,
+  icon: IconComponent,
 }: ThinkingStateProps) {
   // When loading, always show expanded, otherwise use defaultOpen
   const [open, setOpen] = useState<boolean>(isLoading || defaultOpen || isChild);
@@ -133,7 +150,7 @@ export default function ThinkingState({
         <span className="relative flex items-center justify-center text-fg-subtle mt-0.5 w-3.5 h-3.5">
           {isChild ? (
             // Child states always show their variant icon
-            getVariantIcon(isLoading)
+            getVariantIcon(isLoading, IconComponent)
           ) : (
             // Parent states have animated icon transitions
             <AnimatePresence mode="wait">
@@ -168,7 +185,7 @@ export default function ThinkingState({
                   transition={{ duration: 0.15, ease: "easeOut" }}
                   className="absolute inset-0 flex items-center justify-center"
                 >
-                  {getVariantIcon(isLoading)}
+                  {getVariantIcon(isLoading, IconComponent)}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -310,6 +327,21 @@ export default function ThinkingState({
                   >
                     {additionalText}
                   </motion.p>
+                )}
+              </AnimatePresence>
+              
+              {/* Custom content */}
+              <AnimatePresence>
+                {customContent && (
+                  <motion.div
+                    key="custom-content"
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 4 }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
+                  >
+                    {customContent}
+                  </motion.div>
                 )}
               </AnimatePresence>
             </div>

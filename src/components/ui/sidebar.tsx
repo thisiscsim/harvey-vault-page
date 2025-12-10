@@ -72,20 +72,48 @@ function SidebarProvider({
   // This is the internal state of the sidebar.
   // We use openProp and setOpenProp for control from outside the component.
   const [_open, _setOpen] = React.useState(defaultOpen)
+  
+  // Track if we've initialized from storage
+  const hasInitializedRef = React.useRef(false)
+  
+  // Sync from localStorage after mount (runs once)
+  React.useEffect(() => {
+    if (hasInitializedRef.current) return
+    hasInitializedRef.current = true
+    
+    const saved = localStorage.getItem(SIDEBAR_COOKIE_NAME)
+    if (saved !== null) {
+      const savedValue = saved === 'true'
+      if (savedValue !== defaultOpen) {
+        _setOpen(savedValue)
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const open = openProp ?? _open
+  
+  // Use a ref to track open value for the callback to avoid recreating it
+  const openRef = React.useRef(open)
+  React.useEffect(() => {
+    openRef.current = open
+  }, [open])
+  
   const setOpen = React.useCallback(
     (value: boolean | ((value: boolean) => boolean)) => {
-      const openState = typeof value === "function" ? value(open) : value
+      const openState = typeof value === "function" ? value(openRef.current) : value
       if (setOpenProp) {
         setOpenProp(openState)
       } else {
         _setOpen(openState)
       }
 
-      // This sets the cookie to keep the sidebar state.
+      // Persist to localStorage and cookie
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(SIDEBAR_COOKIE_NAME, String(openState))
+      }
       document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
     },
-    [setOpenProp, open]
+    [setOpenProp]
   )
 
   // Helper to toggle the sidebar.

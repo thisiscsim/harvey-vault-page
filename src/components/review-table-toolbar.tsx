@@ -10,6 +10,13 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import MonitoringDialog from "@/components/monitoring-dialog";
 
 // Icon components for column types
 const TextIcon = ({ className }: { className?: string }) => (
@@ -55,25 +62,27 @@ const preGeneratedQuestions = [
 interface ReviewTableToolbarProps {
   chatOpen: boolean;
   onToggleChat: () => void;
-  onCloseArtifact?: () => void;
   alignment?: 'top' | 'center' | 'bottom';
   onAlignmentChange?: (alignment: 'top' | 'center' | 'bottom') => void;
   textWrap?: boolean;
   onTextWrapChange?: (wrap: boolean) => void;
   hasFiles?: boolean;
   onAddColumn?: () => void;
+  isGroupingFiles?: boolean;
+  onGroupFiles?: () => void;
 }
 
 export default function ReviewTableToolbar({ 
   chatOpen, 
   onToggleChat, 
-  onCloseArtifact,
   alignment = 'center',
   onAlignmentChange,
   textWrap = false,
   onTextWrapChange,
   hasFiles = false,
-  onAddColumn
+  onAddColumn,
+  isGroupingFiles = false,
+  onGroupFiles
 }: ReviewTableToolbarProps) {
   // Use props for alignment instead of local state
   const handleAlignmentChange = (newAlignment: 'top' | 'center' | 'bottom') => {
@@ -90,11 +99,15 @@ export default function ReviewTableToolbar({
   
   // State for Add column dropdown
   const [addColumnDropdownOpen, setAddColumnDropdownOpen] = useState(false);
+  
+  // State for Monitoring dialog
+  const [monitoringDialogOpen, setMonitoringDialogOpen] = useState(false);
+  const [isMonitorActive, setIsMonitorActive] = useState(false);
 
   return (
-    <div className="px-3 py-2 border-b border-border-base bg-bg-base flex items-center justify-between" style={{ height: '42px' }}>
+    <div className="px-3 py-2 border-b border-border-base bg-bg-base flex items-center" style={{ height: '42px' }}>
+      {/* Left Section - Ask Harvey */}
       <div className="flex items-center gap-2">
-        {/* Toggle Chat Button */}
         <SmallButton
           onClick={onToggleChat}
           variant="secondary"
@@ -111,28 +124,20 @@ export default function ReviewTableToolbar({
         >
           Ask Harvey
         </SmallButton>
-        
-        {/* Separator */}
-        <div className="w-px bg-bg-subtle-pressed" style={{ height: '20px' }}></div>
-        
-        {/* Add File Button */}
-        <SmallButton 
-          variant="secondary" 
-          icon={<SvgIcon src="/central_icons/Add File.svg" alt="Add file" width={14} height={14} className="text-fg-subtle" />}
-        >
-          Add file
-        </SmallButton>
-        
+      </div>
+      
+      {/* Center Section - File/Column Controls + Formatting */}
+      <div className="flex-1 flex items-center justify-center gap-2">
         {/* Add Column Button with Dropdown */}
         <DropdownMenu open={addColumnDropdownOpen} onOpenChange={setAddColumnDropdownOpen}>
           <DropdownMenuTrigger asChild>
-        <SmallButton 
-          variant="secondary" 
-          icon={<SvgIcon src="/central_icons/Add Column.svg" alt="Add column" width={14} height={14} className="text-fg-subtle" />}
+            <SmallButton 
+              variant="secondary" 
+              icon={<SvgIcon src="/central_icons/Add Column.svg" alt="Add column" width={14} height={14} className="text-fg-subtle" />}
               className={addColumnDropdownOpen ? "bg-bg-subtle-pressed" : ""}
-        >
-          Add column
-        </SmallButton>
+            >
+              Add column
+            </SmallButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className={hasFiles ? "min-w-[380px]" : "min-w-[180px]"}>
             {hasFiles && (
@@ -175,148 +180,179 @@ export default function ReviewTableToolbar({
           </DropdownMenuContent>
         </DropdownMenu>
         
-        {/* Separator */}
-        <div className="w-px bg-bg-subtle-pressed" style={{ height: '20px' }}></div>
+        {/* Add Files Button */}
+        <SmallButton 
+          variant="secondary" 
+          icon={<SvgIcon src="/central_icons/Add File.svg" alt="Add files" width={14} height={14} className="text-fg-subtle" />}
+        >
+          Add files
+        </SmallButton>
         
-        {/* Alignment Options */}
-        <div className="flex items-center gap-1">
+        {/* Group Files Button with Tooltip */}
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <SmallButton 
+                variant="secondary"
+                onClick={onGroupFiles}
+                disabled={isGroupingFiles}
+                icon={<SvgIcon src="/central_icons/Layers.svg" alt="Group files" width={14} height={14} className="text-fg-subtle" />}
+              >
+                Group files
+              </SmallButton>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-[170px]">
+              Automatically group files to extract deeper insights
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        {/* Separator */}
+        <div className="w-px bg-bg-subtle-pressed" style={{ height: '12px' }}></div>
+        
+        {/* Alignment Options - Segmented Control */}
+        <div className="flex items-center bg-bg-subtle rounded-[6px] p-[2px] border border-border-base">
           <button 
             onClick={() => handleAlignmentChange('top')}
-            className={`w-6 h-6 flex items-center justify-center rounded-[6px] transition-colors ${
-              alignment === 'top' ? 'bg-bg-subtle-pressed text-fg-base hover:bg-bg-component' : 'text-fg-subtle hover:bg-bg-subtle'
+            className={`w-[18px] h-[18px] flex items-center justify-center rounded-[4px] transition-colors ${
+              alignment === 'top' ? 'bg-bg-base text-fg-base' : 'text-fg-subtle hover:text-fg-base'
             }`}
             title="Top align"
           >
             <SvgIcon 
               src={alignment === 'top' ? '/top-align-filled.svg' : '/top-align-outline.svg'} 
               alt="Top align" 
-              width={14} 
-              height={14} 
+              width={12} 
+              height={12} 
             />
           </button>
           
           <button 
             onClick={() => handleAlignmentChange('center')}
-            className={`w-6 h-6 flex items-center justify-center rounded-[6px] transition-colors ${
-              alignment === 'center' ? 'bg-bg-subtle-pressed text-fg-base hover:bg-bg-component' : 'text-fg-subtle hover:bg-bg-subtle'
+            className={`w-[18px] h-[18px] flex items-center justify-center rounded-[4px] transition-colors ${
+              alignment === 'center' ? 'bg-bg-base text-fg-base' : 'text-fg-subtle hover:text-fg-base'
             }`}
             title="Center align"
           >
             <SvgIcon 
               src={alignment === 'center' ? '/center-align-filled.svg' : '/center-align-outline.svg'} 
               alt="Center align" 
-              width={14} 
-              height={14} 
+              width={12} 
+              height={12} 
             />
           </button>
           
           <button 
             onClick={() => handleAlignmentChange('bottom')}
-            className={`w-6 h-6 flex items-center justify-center rounded-[6px] transition-colors ${
-              alignment === 'bottom' ? 'bg-bg-subtle-pressed text-fg-base hover:bg-bg-component' : 'text-fg-subtle hover:bg-bg-subtle'
+            className={`w-[18px] h-[18px] flex items-center justify-center rounded-[4px] transition-colors ${
+              alignment === 'bottom' ? 'bg-bg-base text-fg-base' : 'text-fg-subtle hover:text-fg-base'
             }`}
             title="Bottom align"
           >
             <SvgIcon 
               src={alignment === 'bottom' ? '/bottom-align-filled.svg' : '/bottom-align-outline.svg'} 
               alt="Bottom align" 
-              width={14} 
-              height={14} 
+              width={12} 
+              height={12} 
             />
           </button>
         </div>
         
-        {/* Separator */}
-        <div className="w-px bg-bg-subtle-pressed" style={{ height: '20px' }}></div>
-        
-        {/* Text Display Options */}
-        <div className="flex items-center gap-1">
+        {/* Text Display Options - Segmented Control */}
+        <div className="flex items-center bg-bg-subtle rounded-[6px] p-[2px] border border-border-base">
           <button 
             onClick={() => handleTextWrapChange(false)}
-            className={`w-6 h-6 flex items-center justify-center rounded-[6px] transition-colors ${
-              !textWrap ? 'bg-bg-subtle-pressed text-fg-base hover:bg-bg-component' : 'text-fg-subtle hover:bg-bg-subtle'
+            className={`w-[18px] h-[18px] flex items-center justify-center rounded-[4px] transition-colors ${
+              !textWrap ? 'bg-bg-base text-fg-base' : 'text-fg-subtle hover:text-fg-base'
             }`}
             title="Text overflow"
           >
             <SvgIcon 
               src="/overflow.svg" 
               alt="Text overflow" 
-              width={14} 
-              height={14} 
+              width={12} 
+              height={12} 
             />
           </button>
           
           <button 
             onClick={() => handleTextWrapChange(true)}
-            className={`w-6 h-6 flex items-center justify-center rounded-[6px] transition-colors ${
-              textWrap ? 'bg-bg-subtle-pressed text-fg-base hover:bg-bg-component' : 'text-fg-subtle hover:bg-bg-subtle'
+            className={`w-[18px] h-[18px] flex items-center justify-center rounded-[4px] transition-colors ${
+              textWrap ? 'bg-bg-base text-fg-base' : 'text-fg-subtle hover:text-fg-base'
             }`}
             title="Text wrapping"
           >
             <SvgIcon 
               src="/wrapping.svg" 
               alt="Text wrapping" 
-              width={14} 
-              height={14} 
+              width={12} 
+              height={12} 
             />
           </button>
         </div>
         
-        {/* Separator */}
-        <div className="w-px bg-bg-subtle-pressed" style={{ height: '20px' }}></div>
-        
-        {/* Text Length Options */}
-        <div className="flex items-center gap-1">
+        {/* Text Length Options - Segmented Control */}
+        <div className="flex items-center bg-bg-subtle rounded-[6px] p-[2px] border border-border-base">
           <button 
             onClick={() => setTextLength('concise')}
-            className={`w-6 h-6 flex items-center justify-center rounded-[6px] transition-colors ${
-              textLength === 'concise' ? 'bg-bg-subtle-pressed text-fg-base hover:bg-bg-component' : 'text-fg-subtle hover:bg-bg-subtle'
+            className={`w-[18px] h-[18px] flex items-center justify-center rounded-[4px] transition-colors ${
+              textLength === 'concise' ? 'bg-bg-base text-fg-base' : 'text-fg-subtle hover:text-fg-base'
             }`}
             title="Concise"
           >
             <SvgIcon 
               src="/concise.svg" 
               alt="Concise" 
-              width={14} 
-              height={14} 
+              width={12} 
+              height={12} 
             />
           </button>
           
           <button 
             onClick={() => setTextLength('extend')}
-            className={`w-6 h-6 flex items-center justify-center rounded-[6px] transition-colors ${
-              textLength === 'extend' ? 'bg-bg-subtle-pressed text-fg-base hover:bg-bg-component' : 'text-fg-subtle hover:bg-bg-subtle'
+            className={`w-[18px] h-[18px] flex items-center justify-center rounded-[4px] transition-colors ${
+              textLength === 'extend' ? 'bg-bg-base text-fg-base' : 'text-fg-subtle hover:text-fg-base'
             }`}
             title="Extend"
           >
             <SvgIcon 
               src="/extend.svg" 
               alt="Extend" 
-              width={14} 
-              height={14} 
+              width={12} 
+              height={12} 
             />
           </button>
         </div>
       </div>
       
+      {/* Right Section - Monitoring */}
       <div className="flex items-center gap-2">
-        {/* Close button */}
-        <button 
-          onClick={chatOpen ? onCloseArtifact : undefined}
-          disabled={!chatOpen}
-          className={`w-6 h-6 flex items-center justify-center rounded-[6px] transition-colors ${
-            chatOpen 
-              ? 'hover:bg-bg-subtle text-fg-subtle' 
-              : 'text-fg-disabled cursor-not-allowed'
-          }`}
-          title={chatOpen ? "Close" : "Open assistant to close artifact"}
+        <SmallButton 
+          variant="secondary" 
+          onClick={() => setMonitoringDialogOpen(true)}
+          className={isMonitorActive ? "bg-bg-subtle" : ""}
+          icon={
+            <SvgIcon 
+              src={isMonitorActive ? "/central_icons/Satellite - Filled.svg" : "/central_icons/Satellite.svg"} 
+              alt="Monitoring" 
+              width={14} 
+              height={14} 
+              className={isMonitorActive ? "text-fg-base" : "text-fg-subtle"}
+            />
+          }
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 6L6 18"/>
-            <path d="M6 6l12 12"/>
-          </svg>
-        </button>
+          {isMonitorActive ? "Monitor Active" : "Monitoring"}
+        </SmallButton>
       </div>
+      
+      {/* Monitoring Dialog */}
+      <MonitoringDialog 
+        isOpen={monitoringDialogOpen} 
+        onClose={() => setMonitoringDialogOpen(false)}
+        isMonitorActive={isMonitorActive}
+        onCreateMonitor={() => setIsMonitorActive(true)}
+        onRemoveMonitor={() => setIsMonitorActive(false)}
+      />
     </div>
   );
 }

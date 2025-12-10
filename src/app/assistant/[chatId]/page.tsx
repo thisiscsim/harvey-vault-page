@@ -10,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { UserPlus, Download, ArrowLeft, X, ListPlus, Copy, SquarePen, RotateCcw, ThumbsUp, ThumbsDown, Scale, Paperclip, Mic, SlidersHorizontal, CornerDownLeft, AudioLines } from "lucide-react";
+import { UserPlus, Download, ArrowLeft, X, ListPlus, Copy, SquarePen, RotateCcw, ThumbsUp, ThumbsDown, Scale, Paperclip, Mic, SlidersHorizontal, CornerDownLeft, AudioLines, CloudUpload, FileSearch, LoaderCircle, Table2 } from "lucide-react";
 import SourcesDrawer from "@/components/sources-drawer";
 import ShareThreadDialog from "@/components/share-thread-dialog";
 import ShareArtifactDialog from "@/components/share-artifact-dialog";
@@ -29,16 +29,27 @@ import Image from "next/image";
 import { Spinner } from "@/components/ui/spinner";
 import FileManagementDialog from "@/components/file-management-dialog";
 import ThinkingState from "@/components/thinking-state";
+import IManageFilePickerDialog from "@/components/imanage-file-picker-dialog";
+import PrecedentCompaniesTable from "@/components/precedent-companies-table";
+import ArtifactCard from "@/components/artifact-card";
 
 type Message = {
   role: 'user' | 'assistant';
   content: string;
-  type?: 'text' | 'artifact';
+  type?: 'text' | 'artifact' | 'files';
   artifactData?: {
     title: string;
     subtitle: string;
     variant?: 'review' | 'draft'; // Determines which panel to open
   };
+  filesData?: Array<{
+    id: string;
+    name: string;
+    type: 'folder' | 'file';
+    modifiedDate: string;
+    size?: string;
+    path: string;
+  }>;
   isLoading?: boolean;
   thinkingContent?: ReturnType<typeof getThinkingContent>;
   loadingState?: {
@@ -47,6 +58,76 @@ type Message = {
     showAdditionalText: boolean;
     visibleChildStates: number;
   };
+  isWorkflowResponse?: boolean;
+  workflowTitle?: string;
+  isFirstWorkflowMessage?: boolean;
+  showThinking?: boolean;
+  showFileReview?: boolean;
+  fileReviewContent?: {
+    summary: string;
+    files: Array<{
+      name: string;
+      type: 'pdf' | 'docx' | 'spreadsheet' | 'folder' | 'text';
+    }>;
+    totalFiles: number;
+  };
+  fileReviewLoadingState?: {
+    isLoading: boolean;
+    loadedFiles: number;
+  };
+  showEdgarReview?: boolean;
+  edgarReviewContent?: {
+    summary: string;
+    filings: Array<{
+      company: string;
+      date: string;
+      type: string;
+    }>;
+    totalFilings: number;
+  };
+  edgarReviewLoadingState?: {
+    isLoading: boolean;
+    loadedFilings: number;
+  };
+  edgarReviewCompleteMessage?: string;
+  precedentCompaniesData?: Array<{
+    id: string;
+    company: string;
+    ticker: string;
+    tier: string;
+    tierColor: string;
+    similarity: number;
+    industry: string;
+    revenueAtIPO: string;
+    dateOfFiling: string;
+    issuersCounsel: string;
+    uwCounsel: string;
+    class: string;
+    selected: boolean;
+    s1Url?: string;
+    logo?: string;
+  }>;
+  showTimeWindowThinking?: boolean;
+  timeWindowThinkingState?: {
+    isLoading: boolean;
+    showSummary?: boolean;
+    visibleBullets?: number;
+  };
+  timeWindowMessage?: string;
+  showReviewTableGeneration?: boolean;
+  reviewTableGenerationLoadingState?: {
+    isLoading: boolean;
+    showSummary?: boolean;
+    visibleBullets?: number;
+  };
+  reviewTableArtifactData?: {
+    title: string;
+    subtitle: string;
+  };
+  reviewTableMessage?: string;
+  selectedCounselFilter?: 'latham' | 'nofilter';
+  isPrecedentTableConfirmed?: boolean;
+  goldenPrecedentId?: string | null;
 };
 
 // Shared animation configuration for consistency - refined timing
@@ -148,6 +229,7 @@ export default function AssistantChatPage({
   const { chatId } = use(params);
   const searchParams = useSearchParams();
   const initialMessage = searchParams.get('initialMessage');
+  const isWorkflow = searchParams.get('isWorkflow') === 'true';
   const router = useRouter();
   
   // Sidebar control hook
@@ -192,6 +274,7 @@ export default function AssistantChatPage({
   const [unifiedArtifactPanelOpen, setUnifiedArtifactPanelOpen] = useState(false);
   const [currentArtifactType, setCurrentArtifactType] = useState<'draft' | 'review' | null>(null);
   const [isFileManagementOpen, setIsFileManagementOpen] = useState(false);
+  const [isiManagePickerOpen, setIsiManagePickerOpen] = useState(false);
   
   const containerRef = useRef<HTMLDivElement>(null);
   const hasProcessedInitialMessageRef = useRef(false);
@@ -222,6 +305,18 @@ export default function AssistantChatPage({
         sessionStorage.removeItem('fromAssistantHomepage');
       }
       return fromHomepage;
+    }
+    return false;
+  });
+  
+  // Check if this is a workflow-initiated chat
+  const [isWorkflowInitiated] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const workflowInitiated = sessionStorage.getItem('isWorkflowInitiated') === 'true';
+      if (workflowInitiated) {
+        sessionStorage.removeItem('isWorkflowInitiated');
+      }
+      return workflowInitiated;
     }
     return false;
   });
@@ -555,6 +650,57 @@ export default function AssistantChatPage({
     }
   }, [shouldTriggerExpand]);
 
+  // Function to handle workflow-initiated messages (AI-only response)
+  const sendWorkflowMessage = useCallback((workflowTitle: string) => {
+    setIsLoading(true);
+    
+    // Create assistant message without thinking states for first workflow message
+    const assistantMessage = {
+      role: 'assistant' as const,
+      content: '', // Will be populated shortly
+      type: 'text' as const, // Text type for workflow responses
+      isLoading: true,
+      isWorkflowResponse: true, // Flag to identify workflow responses
+      workflowTitle: workflowTitle,
+      isFirstWorkflowMessage: true, // Flag to identify this is the first message
+      showThinking: false // Explicitly disable thinking state for first message
+    };
+    
+    // Add only the assistant message (no user message for workflow)
+    setMessages([assistantMessage]);
+    
+    // Scroll to bottom after message is added
+    setTimeout(() => scrollToBottom(), 50);
+    
+    // Show the content quickly without thinking states
+    setTimeout(() => {
+      // Update the assistant message with actual content for S-1 workflow
+      setMessages(prev => prev.map((msg, idx) => {
+        if (idx === 0 && msg.role === 'assistant' && msg.isLoading) {
+          let content = '';
+          
+          if (workflowTitle.toLowerCase().includes('s-1') && workflowTitle.toLowerCase().includes('risk factors')) {
+            content = "Let's draft comprehensive risk factors for your S-1 filing. To create accurate and company-specific risk factors, I'll need supporting materials that highlight your business operations, financial position, industry challenges, and regulatory environment. This includes financials, business plans, competitor analyses, and any existing risk assessments. How would you like to upload your supporting documents?";
+          } else if (workflowTitle.toLowerCase().includes('s-1')) {
+            content = "Let's get going on drafting your S-1. Before we get started, I'll need some supporting materials (charters, financials, press releases, prior filings). I'll also need key deal details like offering type, structure, and use of proceeds. After I have all the information, I can generate a draft S-1 shell that you can edit in draft mode. First things first, how would you like to upload your supporting documents?";
+          } else {
+            content = `I'll help you with "${workflowTitle}". What specific information or documents would you like me to work with?`;
+          }
+          
+          return {
+            ...msg,
+            content,
+            isLoading: false
+          };
+        }
+        return msg;
+      }));
+      
+      setIsLoading(false);
+      scrollToBottom();
+    }, 300); // Much shorter delay since no thinking states
+  }, [scrollToBottom]);
+
   const sendMessage = useCallback((messageOverride?: string) => {
     const messageToSend = messageOverride || inputValue;
     if (messageToSend.trim() && !isLoading) {
@@ -699,13 +845,22 @@ export default function AssistantChatPage({
   useEffect(() => {
     if (initialMessage && !hasProcessedInitialMessageRef.current) {
       hasProcessedInitialMessageRef.current = true;
-      setInputValue(initialMessage);
-      // Use a short timeout to ensure the component is fully mounted
-      setTimeout(() => {
-        sendMessage(initialMessage);
-      }, 100);
+      
+      // Check if this is a workflow-initiated chat
+      if (isWorkflow || isWorkflowInitiated) {
+        // For workflows, send AI message directly
+        setTimeout(() => {
+          sendWorkflowMessage(initialMessage);
+        }, 100);
+      } else {
+        // For regular chats, send as user message
+        setInputValue(initialMessage);
+        setTimeout(() => {
+          sendMessage(initialMessage);
+        }, 100);
+      }
     }
-  }, [initialMessage, sendMessage]);
+  }, [initialMessage, sendMessage, sendWorkflowMessage, isWorkflow, isWorkflowInitiated]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     // Allow resizing if any artifact panel is open
@@ -1048,31 +1203,35 @@ export default function AssistantChatPage({
                     {message.role === 'assistant' && (
                       <>
 
-                        {/* Show loading thinking states OR regular thinking state */}
-                        {message.isLoading && message.thinkingContent && message.loadingState ? (
-                          // Loading thinking states - progressively reveal content
-                          <ThinkingState
-                            variant={message.type === 'artifact' ? (message.artifactData?.variant === 'draft' ? 'draft' : 'review') : 'analysis'}
-                            title="Thought"
-                            durationSeconds={6}
-                            summary={message.loadingState.showSummary ? message.thinkingContent.summary : undefined}
-                            bullets={message.thinkingContent.bullets?.slice(0, message.loadingState.visibleBullets)}
-                            additionalText={message.loadingState.showAdditionalText ? message.thinkingContent.additionalText : undefined}
-                            childStates={message.thinkingContent.childStates?.slice(0, message.loadingState.visibleChildStates)}
-                            isLoading={true} // This will keep it expanded and show shimmer
-                          />
-                        ) : (
-                          // Regular thinking state (after loading)
-                          <ThinkingState
-                            variant={message.type === 'artifact' ? (message.artifactData?.variant === 'draft' ? 'draft' : 'review') : 'analysis'}
-                            title="Thought"
-                            durationSeconds={6}
-                            summary={getThinkingContent(message.type === 'artifact' ? (message.artifactData?.variant === 'draft' ? 'draft' : 'review') : 'analysis').summary}
-                            bullets={getThinkingContent(message.type === 'artifact' ? (message.artifactData?.variant === 'draft' ? 'draft' : 'review') : 'analysis').bullets}
-                            additionalText={getThinkingContent(message.type === 'artifact' ? (message.artifactData?.variant === 'draft' ? 'draft' : 'review') : 'analysis').additionalText}
-                            childStates={getThinkingContent(message.type === 'artifact' ? (message.artifactData?.variant === 'draft' ? 'draft' : 'review') : 'analysis').childStates}
-                            defaultOpen={false} // Will be collapsed after loading
-                          />
+                        {/* Show loading thinking states OR regular thinking state - unless explicitly disabled */}
+                        {message.showThinking !== false && (
+                          <>
+                            {message.isLoading && message.thinkingContent && message.loadingState ? (
+                              // Loading thinking states - progressively reveal content
+                              <ThinkingState
+                                variant={message.type === 'artifact' ? (message.artifactData?.variant === 'draft' ? 'draft' : 'review') : 'analysis'}
+                                title="Thinking..."
+                                durationSeconds={undefined}
+                                summary={message.loadingState.showSummary ? message.thinkingContent.summary : undefined}
+                                bullets={message.thinkingContent.bullets?.slice(0, message.loadingState.visibleBullets)}
+                                additionalText={message.loadingState.showAdditionalText ? message.thinkingContent.additionalText : undefined}
+                                childStates={message.thinkingContent.childStates?.slice(0, message.loadingState.visibleChildStates)}
+                                isLoading={true} // This will keep it expanded and show shimmer
+                              />
+                            ) : message.thinkingContent ? (
+                              // Regular thinking state (after loading) - use the stored thinking content
+                              <ThinkingState
+                                variant={message.type === 'artifact' ? (message.artifactData?.variant === 'draft' ? 'draft' : 'review') : 'analysis'}
+                                title="Thought"
+                                durationSeconds={6}
+                                summary={message.thinkingContent.summary}
+                                bullets={message.thinkingContent.bullets}
+                                additionalText={message.thinkingContent.additionalText}
+                                childStates={message.thinkingContent.childStates}
+                                defaultOpen={false} // Will be collapsed after loading
+                              />
+                            ) : null}
+                          </>
                         )}
                         
                         {/* Show content only if not loading */}
@@ -1205,7 +1364,568 @@ export default function AssistantChatPage({
                           </button>
                           </>
                         )}
+                        {/* File Review Thinking State */}
+                        {message.showFileReview && message.fileReviewContent && (
+                          <AnimatePresence>
+                            <motion.div 
+                              key="file-review-content"
+                              className="mt-3"
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.4, ease: "easeOut" }}
+                            >
+                              <ThinkingState
+                                variant="analysis"
+                                title={message.fileReviewLoadingState?.isLoading ? "Reviewing files..." : "Reviewed all files"}
+                                durationSeconds={undefined}
+                                icon={FileSearch}
+                                summary={message.fileReviewContent.summary}
+                                customContent={
+                                  <motion.div 
+                                    className="mt-3"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ duration: 0.3, ease: "easeOut" }}
+                                  >
+                                    <div className="flex flex-wrap gap-2">
+                                      {message.fileReviewContent.files.map((file, idx) => (
+                                        <motion.div
+                                          key={`file-chip-${idx}`}
+                                          initial={{ opacity: 0, y: 4 }}
+                                          animate={{ opacity: 1, y: 0 }}
+                                          transition={{ 
+                                            duration: 0.2, 
+                                            ease: "easeOut",
+                                            delay: Math.floor(idx / 3) * 0.1
+                                          }}
+                                          className="inline-flex items-center gap-1.5 px-2 py-1.5 border border-border-base rounded-md text-xs"
+                                        >
+                                          <div className="flex-shrink-0 w-4 h-4 flex items-center justify-center">
+                                            {message.fileReviewLoadingState?.isLoading && idx >= (message.fileReviewLoadingState?.loadedFiles || 0) ? (
+                                              <LoaderCircle className="w-4 h-4 animate-spin text-fg-subtle" />
+                                            ) : file.type === 'pdf' ? (
+                                              <Image src="/pdf-icon.svg" alt="PDF" width={16} height={16} />
+                                            ) : file.type === 'docx' ? (
+                                              <Image src="/docx-icon.svg" alt="DOCX" width={16} height={16} />
+                                            ) : (
+                                              <Image src="/file.svg" alt="File" width={16} height={16} />
+                                            )}
+                                          </div>
+                                          <span className="text-fg-subtle truncate max-w-[200px]">{file.name}</span>
+                                        </motion.div>
+                                      ))}
+                                    </div>
+                                  </motion.div>
+                                }
+                                defaultOpen={false}
+                                isLoading={message.fileReviewLoadingState?.isLoading}
+                              />
+                            </motion.div>
+                          </AnimatePresence>
+                        )}
+                        
+                        {/* Counsel filter buttons for Risk Factors workflow */}
+                        {message.fileReviewLoadingState && !message.fileReviewLoadingState.isLoading && message.showFileReview && !message.selectedCounselFilter && (
+                          <motion.div 
+                            className="mt-3 flex gap-2 pl-2"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.4, ease: "easeOut", delay: 0.1 }}
+                          >
+                            <button
+                              className="py-1.5 px-3 bg-bg-base border border-border-base rounded-md hover:bg-bg-subtle hover:border-border-strong transition-all flex items-center gap-1.5"
+                              onClick={() => {
+                                // Handle Latham & Watkins filter selection
+                                setMessages(prev => prev.map((msg, idx) => {
+                                  if (idx === prev.length - 1 && msg.role === 'assistant') {
+                                    return {
+                                      ...msg,
+                                      selectedCounselFilter: 'latham' as const,
+                                      showTimeWindowThinking: true,
+                                      timeWindowThinkingState: {
+                                        isLoading: true,
+                                        showSummary: false,
+                                        visibleBullets: 0
+                                      }
+                                    };
+                                  }
+                                  return msg;
+                                }));
+                                
+                                // Simulate thinking progress
+                                setTimeout(() => {
+                                  setMessages(prev => prev.map((msg, idx) => {
+                                    if (idx === prev.length - 1 && msg.role === 'assistant') {
+                                      return {
+                                        ...msg,
+                                        timeWindowThinkingState: {
+                                          isLoading: true,
+                                          showSummary: true,
+                                          visibleBullets: 0
+                                        }
+                                      };
+                                    }
+                                    return msg;
+                                  }));
+                                }, 600);
+                                
+                                // Show bullets progressively
+                                [1, 2, 3].forEach((_, bulletIdx) => {
+                                  setTimeout(() => {
+                                    setMessages(prev => prev.map((msg, idx) => {
+                                      if (idx === prev.length - 1 && msg.role === 'assistant') {
+                                        return {
+                                          ...msg,
+                                          timeWindowThinkingState: {
+                                            isLoading: true,
+                                            showSummary: true,
+                                            visibleBullets: bulletIdx + 1
+                                          }
+                                        };
+                                      }
+                                      return msg;
+                                    }));
+                                  }, 1200 + (bulletIdx * 400));
+                                });
+                                
+                                // Complete thinking state and show message
+                                setTimeout(() => {
+                                  setMessages(prev => prev.map((msg, idx) => {
+                                    if (idx === prev.length - 1 && msg.role === 'assistant') {
+                                      return {
+                                        ...msg,
+                                        timeWindowThinkingState: {
+                                          isLoading: false,
+                                          showSummary: true,
+                                          visibleBullets: 3
+                                        },
+                                        timeWindowMessage: "Do you want me to default to a five-year lookback, or would you prefer a narrower or broader time window for pulling S-1 filings?"
+                                      };
+                                    }
+                                    return msg;
+                                  }));
+                                }, 2800);
+                              }}
+                            >
+                              <span className="text-fg-base text-sm font-normal">Latham & Watkins only</span>
+                            </button>
+                            
+                            <button
+                              className="py-1.5 px-3 bg-bg-base border border-border-base rounded-md hover:bg-bg-subtle hover:border-border-strong transition-all flex items-center gap-1.5"
+                              onClick={() => {
+                                // Handle no filter selection
+                                setMessages(prev => prev.map((msg, idx) => {
+                                  if (idx === prev.length - 1 && msg.role === 'assistant') {
+                                    return {
+                                      ...msg,
+                                      selectedCounselFilter: 'nofilter' as const,
+                                      showTimeWindowThinking: true,
+                                      timeWindowThinkingState: {
+                                        isLoading: true,
+                                        showSummary: false,
+                                        visibleBullets: 0
+                                      }
+                                    };
+                                  }
+                                  return msg;
+                                }));
+                                
+                                // Simulate thinking progress (same as above)
+                                setTimeout(() => {
+                                  setMessages(prev => prev.map((msg, idx) => {
+                                    if (idx === prev.length - 1 && msg.role === 'assistant') {
+                                      return {
+                                        ...msg,
+                                        timeWindowThinkingState: {
+                                          isLoading: true,
+                                          showSummary: true,
+                                          visibleBullets: 0
+                                        }
+                                      };
+                                    }
+                                    return msg;
+                                  }));
+                                }, 600);
+                                
+                                [1, 2, 3].forEach((_, bulletIdx) => {
+                                  setTimeout(() => {
+                                    setMessages(prev => prev.map((msg, idx) => {
+                                      if (idx === prev.length - 1 && msg.role === 'assistant') {
+                                        return {
+                                          ...msg,
+                                          timeWindowThinkingState: {
+                                            isLoading: true,
+                                            showSummary: true,
+                                            visibleBullets: bulletIdx + 1
+                                          }
+                                        };
+                                      }
+                                      return msg;
+                                    }));
+                                  }, 1200 + (bulletIdx * 400));
+                                });
+                                
+                                setTimeout(() => {
+                                  setMessages(prev => prev.map((msg, idx) => {
+                                    if (idx === prev.length - 1 && msg.role === 'assistant') {
+                                      return {
+                                        ...msg,
+                                        timeWindowThinkingState: {
+                                          isLoading: false,
+                                          showSummary: true,
+                                          visibleBullets: 3
+                                        },
+                                        timeWindowMessage: "Do you want me to default to a five-year lookback, or would you prefer a narrower or broader time window for pulling S-1 filings?"
+                                      };
+                                    }
+                                    return msg;
+                                  }));
+                                }, 2800);
+                              }}
+                            >
+                              <span className="text-fg-base text-sm font-normal">No filter</span>
+                            </button>
+                          </motion.div>
+                        )}
+                        
+                        {/* Time Window Thinking State */}
+                        {message.showTimeWindowThinking && (
+                          <AnimatePresence>
+                            <motion.div 
+                              key="time-window-thinking"
+                              className="mt-3.5"
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.4, ease: "easeOut" }}
+                            >
+                              <ThinkingState
+                                variant="analysis"
+                                title={message.timeWindowThinkingState?.isLoading ? "Thinking..." : "Thought"}
+                                durationSeconds={message.timeWindowThinkingState?.isLoading ? undefined : 2}
+                                summary={message.timeWindowThinkingState?.showSummary ? "Determining optimal time window for precedent analysis." : undefined}
+                                bullets={message.timeWindowThinkingState?.isLoading ? 
+                                  ['Analyzing date ranges for precedent S-1 filings', 'Filtering by counsel preferences', 'Preparing to pull relevant risk factor sections'].slice(0, message.timeWindowThinkingState?.visibleBullets || 0)
+                                  : ['Analyzing date ranges for precedent S-1 filings', 'Filtering by counsel preferences', 'Preparing to pull relevant risk factor sections']
+                                }
+                                defaultOpen={false}
+                                isLoading={message.timeWindowThinkingState?.isLoading}
+                              />
+                              
+                              {/* Show message after thinking completes */}
+                              {message.timeWindowMessage && (
+                                <motion.div 
+                                  className="mt-1 text-fg-base leading-relaxed pl-2"
+                                  initial={{ opacity: 0, y: 10 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ duration: 0.4, ease: "easeOut", delay: 0.2 }}
+                                >
+                                  {message.timeWindowMessage}
+                                </motion.div>
+                              )}
+                            </motion.div>
+                          </AnimatePresence>
+                        )}
+                        
+                        {/* EDGAR Review Thinking State */}
+                        {message.showEdgarReview && message.edgarReviewContent && (
+                          <AnimatePresence>
+                            <motion.div 
+                              key="edgar-review"
+                              className="mt-3.5"
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.4, ease: "easeOut" }}
+                            >
+                              <ThinkingState
+                                variant="analysis"
+                                title={message.edgarReviewLoadingState?.isLoading ? "Reviewing EDGAR filings..." : "Reviewed EDGAR filings"}
+                                durationSeconds={undefined}
+                                icon={FileSearch}
+                                summary={message.edgarReviewContent.summary}
+                                customContent={
+                                  <motion.div 
+                                    className="mt-3"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ duration: 0.3, ease: "easeOut" }}
+                                  >
+                                    <div className="flex flex-wrap gap-2">
+                                      {message.edgarReviewContent.filings.map((filing, idx) => (
+                                        <motion.div
+                                          key={`filing-chip-${idx}`}
+                                          initial={{ opacity: 0, y: 4 }}
+                                          animate={{ opacity: 1, y: 0 }}
+                                          transition={{ 
+                                            duration: 0.2, 
+                                            ease: "easeOut",
+                                            delay: Math.floor(idx / 3) * 0.1
+                                          }}
+                                          className="inline-flex items-center gap-1.5 px-2 py-1.5 border border-border-base rounded-md text-xs"
+                                        >
+                                          <div className="flex-shrink-0 w-4 h-4 flex items-center justify-center">
+                                            {message.edgarReviewLoadingState?.isLoading && idx >= (message.edgarReviewLoadingState?.loadedFilings || 0) ? (
+                                              <LoaderCircle className="w-4 h-4 animate-spin text-fg-subtle" />
+                                            ) : (
+                                              <Image src="/SEC-logo.svg" alt="SEC" width={16} height={16} />
+                                            )}
+                                          </div>
+                                          <span className="text-fg-subtle truncate max-w-[200px]">
+                                            {filing.company} {filing.date}
+                                          </span>
+                                        </motion.div>
+                                      ))}
+                                    </div>
+                                  </motion.div>
+                                }
+                                defaultOpen={false}
+                                isLoading={message.edgarReviewLoadingState?.isLoading}
+                              />
+                              
+                              {/* Show text response after EDGAR review completes */}
+                              {!message.edgarReviewLoadingState?.isLoading && message.edgarReviewCompleteMessage && (
+                                <>
+                                  <motion.div 
+                                    className="mt-2 text-fg-base leading-relaxed pl-2"
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.4, ease: "easeOut", delay: 0.2 }}
+                                  >
+                                    {message.edgarReviewCompleteMessage}
+                                  </motion.div>
+                                  
+                                  {/* Precedent Companies Table */}
+                                  {message.precedentCompaniesData && (
+                                    <motion.div 
+                                      className="mt-4 pl-2"
+                                      initial={{ opacity: 0, y: 10 }}
+                                      animate={{ opacity: 1, y: 0 }}
+                                      transition={{ duration: 0.4, ease: "easeOut", delay: 0.4 }}
+                                    >
+                                      <PrecedentCompaniesTable 
+                                        data={message.precedentCompaniesData}
+                                        isConfirmed={message.isPrecedentTableConfirmed || false}
+                                        goldenPrecedentId={message.goldenPrecedentId}
+                                        onGoldenPrecedentChange={(id) => {
+                                          setMessages(prev => prev.map((msg, idx) => {
+                                            if (idx === index) {
+                                              return { ...msg, goldenPrecedentId: id };
+                                            }
+                                            return msg;
+                                          }));
+                                        }}
+                                        onConfirm={(selectedCompanies) => {
+                                          // Update the current message to show thinking state and mark as confirmed
+                                          setMessages(prev => prev.map((msg, idx) => {
+                                            if (idx === prev.length - 1 && msg.role === 'assistant' && msg.precedentCompaniesData) {
+                                              // Update the precedentCompaniesData to reflect current selections
+                                              const updatedData = msg.precedentCompaniesData.map(company => ({
+                                                ...company,
+                                                selected: selectedCompanies.some(selected => selected.id === company.id)
+                                              }));
+                                              
+                                              return {
+                                                ...msg,
+                                                precedentCompaniesData: updatedData,
+                                                isPrecedentTableConfirmed: true,
+                                                showReviewTableGeneration: true,
+                                                reviewTableGenerationLoadingState: {
+                                                  isLoading: true,
+                                                  showSummary: false,
+                                                  visibleBullets: 0
+                                                }
+                                              };
+                                            }
+                                            return msg;
+                                          }));
+                                          
+                                          // Progressive reveal of review table generation content
+                                          setTimeout(() => {
+                                            setMessages(prev => prev.map((msg, idx) => {
+                                              if (idx === prev.length - 1 && msg.role === 'assistant' && msg.reviewTableGenerationLoadingState?.isLoading) {
+                                                return {
+                                                  ...msg,
+                                                  reviewTableGenerationLoadingState: {
+                                                    ...msg.reviewTableGenerationLoadingState,
+                                                    showSummary: true
+                                                  }
+                                                };
+                                              }
+                                              return msg;
+                                            }));
+                                          }, 1000);
+                                          
+                                          // Show bullets progressively
+                                          [1, 2, 3].forEach((_, bulletIdx) => {
+                                            setTimeout(() => {
+                                              setMessages(prev => prev.map((msg, idx) => {
+                                                if (idx === prev.length - 1 && msg.role === 'assistant' && msg.reviewTableGenerationLoadingState?.isLoading) {
+                                                  return {
+                                                    ...msg,
+                                                    reviewTableGenerationLoadingState: {
+                                                      ...msg.reviewTableGenerationLoadingState,
+                                                      visibleBullets: bulletIdx + 1
+                                                    }
+                                                  };
+                                                }
+                                                return msg;
+                                              }));
+                                            }, 1800 + (bulletIdx * 800));
+                                          });
+                                          
+                                          // Complete the generation and show the artifact
+                                          setTimeout(() => {
+                                            setMessages(prev => prev.map((msg, idx) => {
+                                              if (idx === prev.length - 1 && msg.role === 'assistant' && msg.precedentCompaniesData) {
+                                                return {
+                                                  ...msg,
+                                                  reviewTableGenerationLoadingState: {
+                                                    isLoading: false,
+                                                    showSummary: true,
+                                                    visibleBullets: 3
+                                                  },
+                                                  reviewTableArtifactData: {
+                                                    title: 'Risk Factor Review Table',
+                                                    subtitle: `${selectedCompanies.length} columns • 126 rows`
+                                                  },
+                                                  reviewTableMessage: 'I\'ve generated a comprehensive Risk Factor Review Table based on your selected precedent companies.'
+                                                };
+                                              }
+                                              return msg;
+                                            }));
+                                            
+                                            // Set artifact data and open panel
+                                            const artifactData = {
+                                              title: 'Risk Factor Review Table',
+                                              subtitle: `${selectedCompanies.length} columns • 126 rows`
+                                            };
+                                            
+                                            setSelectedReviewArtifact(artifactData);
+                                            setCurrentArtifactType('review');
+                                            
+                                            setTimeout(() => {
+                                              setUnifiedArtifactPanelOpen(true);
+                                              setReviewArtifactPanelOpen(true);
+                                            }, 800);
+                                          }, 5600);
+                                        }}
+                                      />
+                                    </motion.div>
+                                  )}
+                                  
+                                  {/* Review Table Generation Thinking State */}
+                                  {message.showReviewTableGeneration && (
+                                    <AnimatePresence>
+                                      <motion.div 
+                                        key="review-table-generation"
+                                        className="mt-4.5"
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.4, ease: "easeOut" }}
+                                      >
+                                        <ThinkingState
+                                          variant="draft"
+                                          title={message.reviewTableGenerationLoadingState?.isLoading ? "Generating review table..." : "Generated review table"}
+                                          durationSeconds={undefined}
+                                          summary={message.reviewTableGenerationLoadingState?.showSummary || !message.reviewTableGenerationLoadingState?.isLoading ? 'I will use the user selections from the precedent review table to generate the Risk Factor Matrix.' : undefined}
+                                          bullets={message.reviewTableGenerationLoadingState?.isLoading 
+                                            ? ['Analyzing selected precedent companies', 'Extracting risk factors from S-1 filings', 'Organizing by category and relevance'].slice(0, message.reviewTableGenerationLoadingState?.visibleBullets || 0)
+                                            : ['Analyzing selected precedent companies', 'Extracting risk factors from S-1 filings', 'Organizing by category and relevance']
+                                          }
+                                          defaultOpen={false}
+                                          isLoading={message.reviewTableGenerationLoadingState?.isLoading}
+                                          icon={Table2}
+                                        />
+                                        
+                                        {/* Review Table Message */}
+                                        {!message.reviewTableGenerationLoadingState?.isLoading && message.reviewTableMessage && (
+                                          <motion.div
+                                            className="mt-2 pl-2 text-fg-subtle"
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ duration: 0.4, ease: "easeOut", delay: 0.2 }}
+                                          >
+                                            {message.reviewTableMessage}
+                                          </motion.div>
+                                        )}
+                                        
+                                        {/* Review Table Artifact Card */}
+                                        {!message.reviewTableGenerationLoadingState?.isLoading && message.reviewTableArtifactData && (
+                                          <motion.div 
+                                            className="mt-2.5 pl-2"
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ duration: 0.4, ease: "easeOut", delay: 0.3 }}
+                                          >
+                                            <ArtifactCard
+                                              title={message.reviewTableArtifactData.title}
+                                              subtitle={message.reviewTableArtifactData.subtitle}
+                                              variant={unifiedArtifactPanelOpen ? 'small' : 'large'}
+                                              isSelected={unifiedArtifactPanelOpen && (
+                                                currentArtifactType === 'review' && selectedReviewArtifact?.title === message.reviewTableArtifactData.title
+                                              )}
+                                              iconType="table"
+                                              onClick={() => {
+                                                const artifactData = {
+                                                  title: message.reviewTableArtifactData!.title,
+                                                  subtitle: message.reviewTableArtifactData!.subtitle
+                                                };
+                                                setSelectedReviewArtifact(artifactData);
+                                                setCurrentArtifactType('review');
+                                                setUnifiedArtifactPanelOpen(true);
+                                                setReviewArtifactPanelOpen(true);
+                                              }}
+                                            />
+                                          </motion.div>
+                                        )}
+                                      </motion.div>
+                                    </AnimatePresence>
+                                  )}
+                                </>
+                              )}
+                            </motion.div>
+                          </AnimatePresence>
+                        )}
+                        
+                        {/* Workflow shortcut buttons */}
+                        {message.isWorkflowResponse && message.workflowTitle?.toLowerCase().includes('s-1') && !messages.some(msg => msg.type === 'files') && (
+                          <div className="pl-2 mt-4">
+                            <div className="flex flex-wrap gap-2">
+                              <button 
+                                className="py-1.5 px-3 bg-bg-base border border-border-base rounded-md hover:bg-bg-subtle hover:border-border-strong transition-all flex items-center gap-1.5"
+                                onClick={() => setIsFileManagementOpen(true)}
+                              >
+                                <CloudUpload size={16} className="text-fg-subtle" />
+                                <span className="text-fg-base text-sm font-normal">Upload files</span>
+                              </button>
+                              
+                              <button 
+                                className="py-1.5 px-3 bg-bg-base border border-border-base rounded-md hover:bg-bg-subtle hover:border-border-strong transition-all flex items-center gap-1.5"
+                                onClick={() => setIsiManagePickerOpen(true)}
+                              >
+                                <Image src="/imanage.svg" alt="" width={16} height={16} />
+                                <span className="text-fg-base text-sm font-normal">Add from iManage</span>
+                              </button>
+                              
+                              <button className="py-1.5 px-3 bg-bg-base border border-border-base rounded-md hover:bg-bg-subtle hover:border-border-strong transition-all flex items-center gap-1.5">
+                                <Image src="/sharepoint.svg" alt="" width={16} height={16} />
+                                <span className="text-fg-base text-sm font-normal">Add from SharePoint</span>
+                              </button>
+                              
+                              <button className="py-1.5 px-3 bg-bg-base border border-border-base rounded-md hover:bg-bg-subtle hover:border-border-strong transition-all flex items-center gap-1.5">
+                                <Image src="/google-drive.svg" alt="" width={16} height={16} />
+                                <span className="text-fg-base text-sm font-normal">Add from Google Drive</span>
+                              </button>
+                              
+                              <button className="py-1.5 px-3 bg-bg-base border border-border-base rounded-md hover:bg-bg-subtle hover:border-border-strong transition-all flex items-center gap-1.5">
+                                <Image src="/folderIcon.svg" alt="" width={16} height={16} />
+                                <span className="text-fg-base text-sm font-normal">Add from Vault project</span>
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                        
                         {/* Ghost buttons for AI responses */}
+                        {!message.isWorkflowResponse && (
                           <div className="flex items-center justify-between mt-3">
                             <div className="flex items-center">
                               <button className="text-xs text-fg-subtle hover:text-fg-base hover:bg-bg-subtle transition-colors rounded-sm px-2 py-1 flex items-center gap-1.5">
@@ -1230,6 +1950,7 @@ export default function AssistantChatPage({
                               </button>
                             </div>
                           </div>
+                        )}
                       </div>
                     )}
                             </motion.div>
@@ -1241,9 +1962,59 @@ export default function AssistantChatPage({
                     {/* User message content */}
                     {message.role === 'user' && (
                       <>
-                        <div className="text-fg-base leading-relaxed pl-2">
-                          {message.content}
-                        </div>
+                        <AnimatePresence>
+                          <motion.div
+                            key="user-message"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.4, ease: "easeOut" }}
+                          >
+                            {/* Files container for file messages */}
+                            {message.type === 'files' && message.filesData ? (
+                              <div className="pl-2">
+                                <div className="text-fg-base leading-relaxed mb-3">
+                                  I&apos;ve uploaded some files from iManage
+                                </div>
+                                <div className="border border-border-base rounded-lg px-3 py-1">
+                                  <div className="space-y-0.5">
+                                    {message.filesData.slice(0, 4).map((file) => (
+                                      <div 
+                                        key={file.id} 
+                                        className="flex items-center gap-2 h-8 px-2 -mx-2 rounded-md hover:bg-bg-subtle transition-colors cursor-pointer min-w-0"
+                                      >
+                                        <div className="flex-shrink-0">
+                                          {file.name.toLowerCase().endsWith('.pdf') ? (
+                                            <Image src="/pdf-icon.svg" alt="PDF" width={16} height={16} />
+                                          ) : file.name.toLowerCase().endsWith('.docx') || file.name.toLowerCase().endsWith('.doc') ? (
+                                            <Image src="/docx-icon.svg" alt="DOCX" width={16} height={16} />
+                                          ) : file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls') ? (
+                                            <Image src="/xlsx-icon.svg" alt="Spreadsheet" width={16} height={16} />
+                                          ) : file.type === 'folder' ? (
+                                            <Image src="/folderIcon.svg" alt="Folder" width={16} height={16} />
+                                          ) : (
+                                            <Image src="/file.svg" alt="File" width={16} height={16} />
+                                          )}
+                                        </div>
+                                        <span className="text-sm text-fg-base truncate flex-1">{file.name}</span>
+                                      </div>
+                                    ))}
+                                    {message.filesData.length > 4 && (
+                                      <div className="flex items-center gap-2 h-8 px-2 -mx-2 rounded-md hover:bg-bg-subtle transition-colors cursor-pointer">
+                                        <div className="text-sm text-fg-muted">
+                                          View {message.filesData.length - 4} more...
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="text-fg-base leading-relaxed pl-2">
+                                {message.content}
+                              </div>
+                            )}
+                          </motion.div>
+                        </AnimatePresence>
                         {/* Ghost buttons for user messages */}
                         <div className="flex items-center mt-2">
                           <button className="text-xs text-fg-subtle hover:text-fg-base hover:bg-bg-subtle transition-colors rounded-sm px-2 py-1 flex items-center gap-1.5">
@@ -1609,6 +2380,101 @@ export default function AssistantChatPage({
       <FileManagementDialog 
         isOpen={isFileManagementOpen} 
         onClose={() => setIsFileManagementOpen(false)} 
+      />
+      <IManageFilePickerDialog
+        isOpen={isiManagePickerOpen}
+        onClose={() => setIsiManagePickerOpen(false)}
+        onFilesSelected={(files) => {
+          console.log('Selected files from iManage:', files);
+          setIsiManagePickerOpen(false);
+          // Simulate file review for Risk Factors workflow
+          const workflowMsg = messages.find(m => m.isWorkflowResponse && m.workflowTitle);
+          const isRiskFactorsWorkflow = workflowMsg?.workflowTitle?.toLowerCase().includes('risk factors');
+          
+          if (isRiskFactorsWorkflow && files.length > 0) {
+            // Create a files message
+            const filesMessage: Message = {
+              role: 'user',
+              content: `Added ${files.length} files from iManage`,
+              type: 'files',
+              filesData: files.map(f => ({
+                id: f.id,
+                name: f.name,
+                type: f.type,
+                modifiedDate: f.modifiedDate,
+                size: f.size,
+                path: f.path
+              }))
+            };
+            
+            // Create AI response with file review
+            const aiResponse: Message = {
+              role: 'assistant',
+              content: '',
+              type: 'text',
+              isLoading: true,
+              showThinking: false,
+              isWorkflowResponse: true,
+              workflowTitle: workflowMsg?.workflowTitle,
+              showFileReview: true,
+              fileReviewContent: {
+                summary: "I'll review the files you've provided to extract key information about your company.",
+                files: files.slice(0, 6).map(f => ({
+                  name: f.name,
+                  type: f.name.endsWith('.pdf') ? 'pdf' as const : f.name.endsWith('.docx') ? 'docx' as const : 'text' as const
+                })),
+                totalFiles: files.length
+              },
+              fileReviewLoadingState: {
+                isLoading: true,
+                loadedFiles: 0
+              }
+            };
+            
+            setMessages(prev => [...prev, filesMessage, aiResponse]);
+            
+            // Simulate file review progress
+            let loadedCount = 0;
+            const progressInterval = setInterval(() => {
+              loadedCount++;
+              setMessages(prev => prev.map((msg, idx) => {
+                if (idx === prev.length - 1 && msg.role === 'assistant' && msg.fileReviewLoadingState) {
+                  return {
+                    ...msg,
+                    fileReviewLoadingState: {
+                      ...msg.fileReviewLoadingState,
+                      loadedFiles: loadedCount
+                    }
+                  };
+                }
+                return msg;
+              }));
+              
+              if (loadedCount >= Math.min(6, files.length)) {
+                clearInterval(progressInterval);
+                
+                // Complete file review
+                setTimeout(() => {
+                  setMessages(prev => prev.map((msg, idx) => {
+                    if (idx === prev.length - 1 && msg.role === 'assistant') {
+                      return {
+                        ...msg,
+                        content: "I've reviewed all the files. Before I pull the proposed precedent set, I need a couple of preferences. Should I limit the search to precedents where Latham & Watkins served as issuer's counsel, or not filter by law firm at all?",
+                        isLoading: false,
+                        fileReviewLoadingState: {
+                          isLoading: false,
+                          loadedFiles: Math.min(6, files.length)
+                        },
+                        selectedCounselFilter: undefined
+                      };
+                    }
+                    return msg;
+                  }));
+                }, 500);
+              }
+            }, 400);
+          }
+        }}
       />
         </div>
       </SidebarInset>
