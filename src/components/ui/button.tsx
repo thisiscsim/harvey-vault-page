@@ -11,6 +11,7 @@ const buttonVariants = {
   },
   size: {
     default: "h-8 px-3 text-sm rounded-[8px]",
+    medium: "h-7 px-2 text-sm font-medium rounded-[7px]",
     small: "h-6 px-2 text-xs rounded-[6px]",
     icon: "h-8 w-8 rounded-[8px]",
     iconSmall: "h-6 w-6 rounded-[6px]",

@@ -39,6 +39,15 @@ export function SvgIcon({ src, alt, width = 16, height = 16, className }: SvgIco
         if (!processedSvg.includes(`height="${height}"`)) {
           processedSvg = processedSvg.replace('<svg', `<svg height="${height}"`)
         }
+        
+        // Replace hardcoded colors with currentColor for proper theming
+        processedSvg = processedSvg
+          .replace(/stroke="black"/g, 'stroke="currentColor"')
+          .replace(/stroke="#000000"/g, 'stroke="currentColor"')
+          .replace(/stroke="#000"/g, 'stroke="currentColor"')
+          .replace(/fill="black"/g, 'fill="currentColor"')
+          .replace(/fill="#000000"/g, 'fill="currentColor"')
+          .replace(/fill="#000"/g, 'fill="currentColor"')
 
         svgCache.set(cacheKey, processedSvg)
         setSvgContent(processedSvg)

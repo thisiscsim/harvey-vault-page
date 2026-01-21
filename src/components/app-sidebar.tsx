@@ -72,10 +72,10 @@ const menuItems = [
 
 // Vault projects (first 5)
 const vaultProjects = [
-  { id: 1, name: "Nikhil's Personal Project", href: "/personal-project" },
+  { id: 1, name: "Stubhub IPO Filing", href: "/stubhub-ipo-filing" },
   { id: 2, name: "M&A (US)", href: "/vault/ma-us" },
   { id: 3, name: "Cross-Border Tax Strategies", href: "/vault/cross-border-tax" },
-  { id: 4, name: "Reevo AI - Series B Financing", href: "/vault/reevo-ai" },
+  { id: 4, name: "Reevo AI - Series B Financing", href: "/reevo-ai-series-b" },
   { id: 5, name: "Regulatory Compliance Audit", href: "/vault/regulatory-compliance" },
 ]
 
@@ -101,24 +101,25 @@ export function AppSidebar() {
   const router = useRouter()
   const pathname = usePathname()
   const [isAvatarHovered, setIsAvatarHovered] = useState(false)
-  const [isVaultOpen, setIsVaultOpen] = useState(() => {
-    // Load from localStorage on initial render (client-side only)
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('sidebar-vault-open')
-      return saved !== null ? saved === 'true' : true
-    }
-    return true
-  })
+  const [isVaultOpen, setIsVaultOpen] = useState<boolean | null>(null)
 
-  // Persist vault open state to localStorage
+  // Load vault open state from localStorage on mount
   useEffect(() => {
-    localStorage.setItem('sidebar-vault-open', String(isVaultOpen))
+    const saved = localStorage.getItem('sidebar-vault-open')
+    setIsVaultOpen(saved !== null ? saved === 'true' : true)
+  }, [])
+
+  // Persist vault open state to localStorage (only after initial load)
+  useEffect(() => {
+    if (isVaultOpen !== null) {
+      localStorage.setItem('sidebar-vault-open', String(isVaultOpen))
+    }
   }, [isVaultOpen])
   
   // Determine the selected item based on current path
   const getSelectedItem = () => {
     // Check if the current path is a vault sub-page
-    if (pathname === "/vault" || pathname === "/personal-project" || pathname.startsWith("/vault/")) {
+    if (pathname === "/vault" || pathname === "/stubhub-ipo-filing" || pathname === "/reevo-ai-series-b" || pathname.startsWith("/vault/")) {
       return "Vault"
     }
     
@@ -296,7 +297,7 @@ export function AppSidebar() {
                   // Vault menu item should only show active state when:
                   // 1. On /vault page directly, OR
                   // 2. On a vault project AND (submenu is closed OR sidebar is collapsed)
-                  const isOnVaultProject = pathname === "/personal-project" || pathname.startsWith("/vault/")
+                  const isOnVaultProject = pathname === "/stubhub-ipo-filing" || pathname === "/reevo-ai-series-b" || pathname.startsWith("/vault/")
                   const isSubmenuVisible = isVaultOpen && state === "expanded"
                   const isVaultItemActive = pathname === "/vault" || (isOnVaultProject && !isSubmenuVisible)
                   

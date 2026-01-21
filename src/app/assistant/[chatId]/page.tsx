@@ -1181,26 +1181,77 @@ export default function AssistantChatPage({
               </div>
             ) : (
               messages.map((message, index) => (
-                <div key={index} data-message className={`flex items-start space-x-1 ${index !== messages.length - 1 ? 'mb-6' : ''}`}>
-                  {/* Avatar/Icon */}
-                  <div className="flex-shrink-0">
-                    {message.role === 'user' ? (
-                      <div className="w-6 h-6 bg-bg-base border border-border-base rounded-full flex items-center justify-center">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-fg-subtle">
-                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                          <circle cx="12" cy="7" r="4"/>
-                        </svg>
+                <div key={index} data-message className={`${index !== messages.length - 1 ? 'mb-6' : ''}`}>
+                  {/* User Message - Right aligned */}
+                  {message.role === 'user' && (
+                    <div className="flex flex-col gap-1 items-end pl-[68px]">
+                      <div className="bg-bg-subtle px-4 py-3 rounded-[12px]">
+                        {/* Files container for file messages */}
+                        {message.type === 'files' && message.filesData ? (
+                          <div>
+                            <div className="text-sm text-fg-base leading-5 mb-3">
+                              I&apos;ve uploaded some files from iManage
+                            </div>
+                            <div className="border border-border-base rounded-lg px-3 py-1 bg-bg-base">
+                              <div className="space-y-0.5">
+                                {message.filesData.slice(0, 4).map((file) => (
+                                  <div 
+                                    key={file.id} 
+                                    className="flex items-center gap-2 h-8 px-2 -mx-2 rounded-md hover:bg-bg-subtle transition-colors cursor-pointer min-w-0"
+                                  >
+                                    <div className="flex-shrink-0">
+                                      {file.name.toLowerCase().endsWith('.pdf') ? (
+                                        <Image src="/pdf-icon.svg" alt="PDF" width={16} height={16} />
+                                      ) : file.name.toLowerCase().endsWith('.docx') || file.name.toLowerCase().endsWith('.doc') ? (
+                                        <Image src="/docx-icon.svg" alt="DOCX" width={16} height={16} />
+                                      ) : file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls') ? (
+                                        <Image src="/xlsx-icon.svg" alt="Spreadsheet" width={16} height={16} />
+                                      ) : file.type === 'folder' ? (
+                                        <Image src="/folderIcon.svg" alt="Folder" width={16} height={16} />
+                                      ) : (
+                                        <Image src="/file.svg" alt="File" width={16} height={16} />
+                                      )}
+                                    </div>
+                                    <span className="text-sm text-fg-base truncate flex-1">{file.name}</span>
+                                  </div>
+                                ))}
+                                {message.filesData.length > 4 && (
+                                  <div className="flex items-center gap-2 h-8 px-2 -mx-2 rounded-md hover:bg-bg-subtle transition-colors cursor-pointer">
+                                    <div className="text-sm text-fg-muted">
+                                      View {message.filesData.length - 4} more...
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-sm text-fg-base leading-5">
+                            {message.content}
+                          </div>
+                        )}
                       </div>
-                    ) : (
-                      <div className="w-6 h-6 flex items-center justify-center">
-                        <Image src="/harvey-avatar.svg" alt="Harvey" width={24} height={24} className="w-6 h-6" />
+                      {/* Action buttons - right aligned */}
+                      <div className="flex items-center justify-end">
+                        <button className="text-xs font-medium text-fg-subtle hover:text-fg-base hover:bg-bg-subtle transition-colors rounded px-2 py-1 flex items-center gap-1.5">
+                          <Copy className="w-3 h-3" />
+                          Copy
+                        </button>
+                        <button className="text-xs font-medium text-fg-subtle hover:text-fg-base hover:bg-bg-subtle transition-colors rounded px-2 py-1 flex items-center gap-1.5">
+                          <ListPlus className="w-3 h-3" />
+                          Save prompt
+                        </button>
+                        <button className="text-xs font-medium text-fg-subtle hover:text-fg-base hover:bg-bg-subtle transition-colors rounded px-2 py-1 flex items-center gap-1.5">
+                          <SquarePen className="w-3 h-3" />
+                          Edit query
+                        </button>
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                   
-                  {/* Message Content */}
-                  <div className="flex-1 min-w-0 pt-0.5">
-                    {message.role === 'assistant' && (
+                  {/* Assistant Message - Left aligned, no avatar */}
+                  {message.role === 'assistant' && (
+                    <div className="flex-1 min-w-0">
                       <>
 
                         {/* Show loading thinking states OR regular thinking state - unless explicitly disabled */}
@@ -1957,82 +2008,8 @@ export default function AssistantChatPage({
                           </AnimatePresence>
                         )}
                       </>
-                    )}
-                    
-                    {/* User message content */}
-                    {message.role === 'user' && (
-                      <>
-                        <AnimatePresence>
-                          <motion.div
-                            key="user-message"
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.4, ease: "easeOut" }}
-                          >
-                            {/* Files container for file messages */}
-                            {message.type === 'files' && message.filesData ? (
-                              <div className="pl-2">
-                                <div className="text-fg-base leading-relaxed mb-3">
-                                  I&apos;ve uploaded some files from iManage
-                                </div>
-                                <div className="border border-border-base rounded-lg px-3 py-1">
-                                  <div className="space-y-0.5">
-                                    {message.filesData.slice(0, 4).map((file) => (
-                                      <div 
-                                        key={file.id} 
-                                        className="flex items-center gap-2 h-8 px-2 -mx-2 rounded-md hover:bg-bg-subtle transition-colors cursor-pointer min-w-0"
-                                      >
-                                        <div className="flex-shrink-0">
-                                          {file.name.toLowerCase().endsWith('.pdf') ? (
-                                            <Image src="/pdf-icon.svg" alt="PDF" width={16} height={16} />
-                                          ) : file.name.toLowerCase().endsWith('.docx') || file.name.toLowerCase().endsWith('.doc') ? (
-                                            <Image src="/docx-icon.svg" alt="DOCX" width={16} height={16} />
-                                          ) : file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls') ? (
-                                            <Image src="/xlsx-icon.svg" alt="Spreadsheet" width={16} height={16} />
-                                          ) : file.type === 'folder' ? (
-                                            <Image src="/folderIcon.svg" alt="Folder" width={16} height={16} />
-                                          ) : (
-                                            <Image src="/file.svg" alt="File" width={16} height={16} />
-                                          )}
-                                        </div>
-                                        <span className="text-sm text-fg-base truncate flex-1">{file.name}</span>
-                                      </div>
-                                    ))}
-                                    {message.filesData.length > 4 && (
-                                      <div className="flex items-center gap-2 h-8 px-2 -mx-2 rounded-md hover:bg-bg-subtle transition-colors cursor-pointer">
-                                        <div className="text-sm text-fg-muted">
-                                          View {message.filesData.length - 4} more...
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="text-fg-base leading-relaxed pl-2">
-                                {message.content}
-                              </div>
-                            )}
-                          </motion.div>
-                        </AnimatePresence>
-                        {/* Ghost buttons for user messages */}
-                        <div className="flex items-center mt-2">
-                          <button className="text-xs text-fg-subtle hover:text-fg-base hover:bg-bg-subtle transition-colors rounded-sm px-2 py-1 flex items-center gap-1.5">
-                            <Copy className="w-3 h-3" />
-                            Copy
-                          </button>
-                          <button className="text-xs text-fg-subtle hover:text-fg-base hover:bg-bg-subtle transition-colors rounded-sm px-2 py-1 flex items-center gap-1.5">
-                            <ListPlus className="w-3 h-3" />
-                            Save prompt
-                          </button>
-                          <button className="text-xs text-fg-subtle hover:text-fg-base hover:bg-bg-subtle transition-colors rounded-sm px-2 py-1 flex items-center gap-1.5">
-                            <SquarePen className="w-3 h-3" />
-                            Edit query
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               ))
             )}
