@@ -863,22 +863,34 @@ export default function StagingExamplePage() {
                                 
                                 {/* Name Cell */}
                                 <div className="flex-1 min-w-[200px] flex items-center gap-2 h-full px-1 py-3 overflow-hidden z-10">
-                                  {flexRender(row.getVisibleCells().find(cell => cell.column.id === 'name')?.column.columnDef.cell, row.getVisibleCells().find(cell => cell.column.id === 'name')?.getContext())}
+                                  {(() => {
+                                    const cell = row.getVisibleCells().find(c => c.column.id === 'name');
+                                    return cell ? flexRender(cell.column.columnDef.cell, cell.getContext()) : null;
+                                  })()}
                                 </div>
                                 
                                 {/* Category Cell */}
                                 <div className="flex-1 min-w-[180px] flex items-center h-full px-1 py-3 z-10">
-                                  {flexRender(row.getVisibleCells().find(cell => cell.column.id === 'category')?.column.columnDef.cell, row.getVisibleCells().find(cell => cell.column.id === 'category')?.getContext())}
+                                  {(() => {
+                                    const cell = row.getVisibleCells().find(c => c.column.id === 'category');
+                                    return cell ? flexRender(cell.column.columnDef.cell, cell.getContext()) : null;
+                                  })()}
                                 </div>
                                 
                                 {/* Last Modified Cell */}
                                 <div className="w-[128px] flex items-center h-full px-1 py-3 shrink-0 z-10">
-                                  {flexRender(row.getVisibleCells().find(cell => cell.column.id === 'uploadedAt')?.column.columnDef.cell, row.getVisibleCells().find(cell => cell.column.id === 'uploadedAt')?.getContext())}
+                                  {(() => {
+                                    const cell = row.getVisibleCells().find(c => c.column.id === 'uploadedAt');
+                                    return cell ? flexRender(cell.column.columnDef.cell, cell.getContext()) : null;
+                                  })()}
                                 </div>
                                 
                                 {/* Size Cell */}
                                 <div className="w-[80px] flex items-center h-full px-1 py-3 shrink-0 z-10">
-                                  {flexRender(row.getVisibleCells().find(cell => cell.column.id === 'size')?.column.columnDef.cell, row.getVisibleCells().find(cell => cell.column.id === 'size')?.getContext())}
+                                  {(() => {
+                                    const cell = row.getVisibleCells().find(c => c.column.id === 'size');
+                                    return cell ? flexRender(cell.column.columnDef.cell, cell.getContext()) : null;
+                                  })()}
                                 </div>
                                 
                                 {/* Hover Action Buttons */}
