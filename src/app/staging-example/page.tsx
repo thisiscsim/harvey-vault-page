@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo, Suspense } from "react";
 import { 
   ArrowLeft, Users, Briefcase, ChevronRight,
   FileIcon, MessageSquare, Upload, Share2, Edit3,
@@ -112,7 +112,7 @@ const initialActivities: Activity[] = [
   { id: '1', type: 'create', user: 'you@company.com', action: 'created the vault', time: 'Just now' },
 ];
 
-export default function StagingExamplePage() {
+function StagingExampleContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -1214,5 +1214,13 @@ export default function StagingExamplePage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function StagingExamplePage() {
+  return (
+    <Suspense fallback={<div className="flex h-screen items-center justify-center"><Spinner /></div>}>
+      <StagingExampleContent />
+    </Suspense>
   );
 }
