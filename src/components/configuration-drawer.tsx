@@ -232,7 +232,7 @@ export default function ConfigurationDrawer({
   const overviewContent = (
     <div className="space-y-0">
       {/* Sources Shelf - includes uploaded files at the top */}
-      <div className="-mx-4 px-4 relative">
+      <div className="-mx-4 px-4 pt-2 relative">
         <div className="flex items-center justify-between h-[36px]">
           <span className="text-xs font-medium text-fg-base leading-[20px]">Sources</span>
           <button className="h-[24px] px-[6px] py-[2px] text-xs font-medium text-fg-subtle hover:text-fg-base transition-colors leading-[16px]">
@@ -291,7 +291,7 @@ export default function ConfigurationDrawer({
       </div>
       
       {/* Agents Shelf */}
-      <div className="border-t border-border-base -mx-4 px-4 pt-4 pb-4">
+      <div className="border-t border-border-base -mx-4 px-4 pt-2 pb-4">
         <div className="flex items-center justify-between h-[44px]">
           <span className="text-xs font-medium text-fg-base leading-[20px]">Agents</span>
         </div>
@@ -376,7 +376,7 @@ export default function ConfigurationDrawer({
       </div>
       
       {/* Activity Shelf */}
-      <div className="border-t border-border-base -mx-4 px-4 pt-4">
+      <div className="border-t border-border-base -mx-4 px-4 pt-2">
         <div className="flex items-center justify-between h-[44px]">
           <span className="text-xs font-medium text-fg-base leading-[20px]">Activity</span>
           <button className="h-[24px] px-[6px] py-[2px] text-xs font-medium text-fg-subtle hover:text-fg-base transition-colors leading-[16px]">
@@ -564,13 +564,41 @@ export default function ConfigurationDrawer({
 
   // Configurations Tab Content
   const configurationsContent = (
-    <div className="flex flex-col items-center justify-center py-8">
-      <div className="h-[80px] w-[80px] flex items-center justify-center mb-4">
-        <img src="/instruction_lines.svg" alt="Configurations" className="w-full h-full object-contain opacity-50" />
+    <div className="space-y-0">
+      {/* Memory - Empty State */}
+      <div className="pt-2 pb-5">
+        <div className="flex items-center justify-between h-[44px]">
+          <span className="text-xs font-medium text-fg-base leading-[20px]">Memory</span>
+        </div>
+        <div className="flex flex-col gap-3 items-center justify-center">
+          <div className="h-[92px] w-[100px] flex items-center justify-center">
+            <img src="/memory_cube.svg" alt="Memory" className="w-full h-full object-contain" />
+          </div>
+          <p className="text-xs text-fg-muted leading-4 text-center">
+            Memory will automatically build up over time as you start working and generating more queries
+          </p>
+        </div>
       </div>
-      <p className="text-xs text-fg-muted leading-[16px] text-center px-4">
-        Configuration options will appear here
-      </p>
+      
+      {/* Instructions - Empty State */}
+      <div className="border-t border-border-base -mx-4 px-4 pt-2 pb-5">
+        <div className="flex items-center justify-between h-[44px]">
+          <span className="text-xs font-medium text-fg-base leading-[20px]">Instructions</span>
+          <button 
+            className="h-[24px] px-[6px] py-[2px] text-xs font-medium text-fg-subtle hover:text-fg-base transition-colors leading-4"
+          >
+            Edit
+          </button>
+        </div>
+        <div className="flex flex-col gap-3 items-center justify-center">
+          <div className="h-[92px] w-[92px] flex items-center justify-center">
+            <img src="/instruction_lines.svg" alt="Instructions" className="w-full h-full object-contain" />
+          </div>
+          <p className="text-xs text-fg-muted leading-4 text-center">
+            Provide Harvey with relevant instructions and information for queries within this vault.
+          </p>
+        </div>
+      </div>
     </div>
   );
 
@@ -647,7 +675,7 @@ export default function ConfigurationDrawer({
       </div>
       
       {/* Content with custom scrollbar */}
-      <div className="flex-1 overflow-y-auto px-4 py-4">
+      <div className="flex-1 overflow-y-auto px-4">
         {renderTabContent()}
       </div>
     </div>

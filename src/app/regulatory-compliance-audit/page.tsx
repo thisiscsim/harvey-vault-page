@@ -825,7 +825,7 @@ export default function RegulatoryComplianceAuditPage() {
                       className="relative px-2 py-1.5 font-medium transition-colors text-fg-subtle hover:text-fg-base data-[checked=true]:text-fg-base"
                       style={{ fontSize: '14px', lineHeight: '20px' }}
                     >
-                      Recent queries
+                      Queries
                     </button>
                     <button
                       data-id="activity"

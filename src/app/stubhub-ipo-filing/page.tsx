@@ -8,7 +8,7 @@ import {
   Paperclip, CornerDownLeft, Plus,
   Copy, Download, RotateCcw, ThumbsUp, ThumbsDown, 
   Scale, Mic, ListPlus, CloudUpload, FileSearch, 
-  LoaderCircle, SquarePen, FilePen, Table2
+  LoaderCircle, SquarePen, FilePen, Table2, X
 } from "lucide-react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset } from "@/components/ui/sidebar";
@@ -21,6 +21,7 @@ import ThinkingState from "@/components/thinking-state";
 import { TextLoop } from "../../../components/motion-primitives/text-loop";
 import FileManagementDialog from "@/components/file-management-dialog";
 import IManageFilePickerDialog from "@/components/imanage-file-picker-dialog";
+import VaultFilePickerDialog from "@/components/vault-file-picker-dialog";
 import ReviewTableArtifactCard from "@/components/review-table-artifact-card";
 import DraftArtifactPanel from "@/components/draft-artifact-panel";
 import ReviewArtifactPanel from "@/components/review-artifact-panel";
@@ -48,6 +49,7 @@ type Message = {
     size?: string;
     path: string;
   }>;
+  fileSource?: 'imanage' | 'vault' | 'local';
   isLoading?: boolean;
   thinkingContent?: ReturnType<typeof getThinkingContent>;
   loadingState?: {
@@ -382,7 +384,7 @@ export default function StubhubIPOFilingPage() {
     const newChatId = `chat-${Date.now()}`;
     const newChat: ChatThread = {
       id: newChatId,
-      title: 'Untitled',
+      title: 'New chat',
       messages: [],
       isLoading: false,
       agentState: { isRunning: false, taskName: '' }
@@ -411,7 +413,7 @@ export default function StubhubIPOFilingPage() {
       const newChatId = `chat-${Date.now()}`;
       const newChat: ChatThread = {
         id: newChatId,
-        title: 'Untitled',
+        title: 'New chat',
         messages: [],
         isLoading: false,
         agentState: { isRunning: false, taskName: '' }
@@ -458,6 +460,7 @@ export default function StubhubIPOFilingPage() {
   // Dialog state
   const [isFileManagementOpen, setIsFileManagementOpen] = useState(false);
   const [isIManagePickerOpen, setIsIManagePickerOpen] = useState(false);
+  const [isVaultPickerOpen, setIsVaultPickerOpen] = useState(false);
   
   // Uploaded files state for drawer
   interface UploadedFile {
@@ -1937,20 +1940,64 @@ export default function StubhubIPOFilingPage() {
                   {/* Chat Tabs */}
                   <div className="flex items-center gap-1 overflow-hidden flex-1 min-w-0 max-w-[calc(100%-48px)]" style={{ flexWrap: 'nowrap' }}>
                     {chatThreads.map((thread) => (
-                      <button
+                      <div
                         key={thread.id}
-                        onClick={() => setActiveChatId(thread.id)}
                         className={cn(
-                          "text-sm font-medium rounded-md transition-colors whitespace-nowrap overflow-hidden text-ellipsis flex-shrink-0",
+                          "relative flex items-center rounded-md transition-colors flex-shrink-0 group/tab",
                           thread.id === activeChatId
-                            ? "text-fg-base bg-bg-subtle"
-                            : "text-fg-muted hover:text-fg-base hover:bg-bg-subtle"
+                            ? "bg-bg-subtle"
+                            : "hover:bg-bg-subtle"
                         )}
-                        style={{ padding: '4px 8px', maxWidth: '200px' }}
-                        title={thread.title || 'Untitled'}
+                        style={{ maxWidth: '200px', minWidth: 'fit-content' }}
                       >
-                        {(thread.title || 'Untitled').length > 25 ? (thread.title || 'Untitled').substring(0, 25) + '...' : (thread.title || 'Untitled')}
-                      </button>
+                        <button
+                          onClick={() => setActiveChatId(thread.id)}
+                          className={cn(
+                            "text-sm font-medium whitespace-nowrap overflow-hidden relative text-ellipsis",
+                            thread.id === activeChatId
+                              ? "text-fg-base"
+                              : "text-fg-muted hover:text-fg-base"
+                          )}
+                          style={{ 
+                            padding: '4px 8px', 
+                            maxWidth: '200px'
+                          }}
+                          title={thread.title || 'New chat'}
+                        >
+                          {thread.title || 'New chat'}
+                        </button>
+                        {/* Gradient fade + close icon - only on hover when multiple chats */}
+                        {chatThreads.length > 1 && (
+                          <div className="absolute right-0 top-0 bottom-0 flex items-center opacity-0 group-hover/tab:opacity-100 transition-opacity rounded-r-md">
+                            {/* Gradient fade */}
+                            <div 
+                              className={cn(
+                                "w-6 h-full",
+                                "bg-gradient-to-r from-transparent to-bg-subtle"
+                              )}
+                            />
+                            {/* Solid background behind X */}
+                            <div className="h-full bg-bg-subtle flex items-center pr-2 rounded-r-md">
+                              <X 
+                                size={12} 
+                                className="text-fg-muted hover:text-fg-base cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  // Close this chat
+                                  setChatThreads(prev => {
+                                    const newThreads = prev.filter(t => t.id !== thread.id);
+                                    // If we're closing the active chat, switch to another one
+                                    if (thread.id === activeChatId && newThreads.length > 0) {
+                                      setActiveChatId(newThreads[0].id);
+                                    }
+                                    return newThreads;
+                                  });
+                                }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     ))}
                   </div>
                   <button 
@@ -1999,7 +2046,11 @@ export default function StubhubIPOFilingPage() {
                           <div className="flex flex-col">
                             {/* Draft S-1 shell */}
                             <button
-                              onClick={() => sendWorkflowMessage("Draft me an S-1 shell")}
+                              onClick={() => {
+                                sendWorkflowMessage("Draft me an S-1 shell");
+                                // Open vault file picker after workflow message loads
+                                setTimeout(() => setIsVaultPickerOpen(true), 800);
+                              }}
                               disabled={isLoading}
                               className="flex items-center gap-1.5 px-3 py-2 rounded-md hover:bg-bg-subtle transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
@@ -2017,7 +2068,11 @@ export default function StubhubIPOFilingPage() {
                             
                             {/* Generate risk factors */}
                             <button
-                              onClick={() => sendWorkflowMessage("Generate risk factors for S-1 filing")}
+                              onClick={() => {
+                                sendWorkflowMessage("Generate risk factors for S-1 filing");
+                                // Open vault file picker after workflow message loads
+                                setTimeout(() => setIsVaultPickerOpen(true), 800);
+                              }}
                               disabled={isLoading}
                               className="flex items-center gap-1.5 px-3 py-2 rounded-md hover:bg-bg-subtle transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
@@ -2154,7 +2209,7 @@ export default function StubhubIPOFilingPage() {
                               <div className="bg-bg-subtle px-4 py-3 rounded-[12px]">
                                 <div className="text-sm text-fg-base leading-5">
                                   {message.type === 'files' && message.filesData 
-                                    ? "I've uploaded some files from iManage"
+                                    ? `I've uploaded some files from ${message.fileSource === 'vault' ? 'this vault' : message.fileSource === 'local' ? 'my computer' : 'iManage'}`
                                     : message.content
                                   }
                                 </div>
@@ -3621,7 +3676,350 @@ export default function StubhubIPOFilingPage() {
               role: 'user' as const,
               content: '',
               type: 'files' as const,
-              filesData: files
+              filesData: files,
+              fileSource: 'imanage' as const
+            }],
+            agentState: {
+              ...chat.agentState,
+              isRunning: true,
+              // Only update taskName if not already set (preserve workflow title)
+              taskName: chat.agentState.taskName || `Processing ${files.length} file${files.length > 1 ? 's' : ''}...`,
+              currentAction: 'Analyzing documents...',
+            }
+          }));
+          
+          // Open configuration drawer when files are uploaded
+          setIsConfigurationDrawerOpen(true);
+          
+          // Scroll to bottom
+          setTimeout(() => scrollToBottom(), 100);
+          
+          // Check if this is a Risk Factors workflow
+          const workflowMessage = messages.find(msg => msg.isWorkflowResponse && msg.workflowTitle);
+          const isRiskFactorsWorkflow = workflowMessage?.workflowTitle?.toLowerCase().includes('risk factors');
+          
+          // Add AI response with thinking states after a delay
+          setTimeout(() => {
+            // Get thinking content for file processing
+            const thinkingContent = isRiskFactorsWorkflow ? {
+              summary: "The user has uploaded documents that I need to analyze for risk identification. I'll extract key business risks, operational challenges, and regulatory considerations that should be disclosed in the S-1 risk factors section.",
+              bullets: [
+                "Identify business and operational risks",
+                "Analyze financial vulnerabilities and market conditions",
+                "Extract regulatory and compliance challenges"
+              ],
+              additionalText: ""
+            } : {
+              summary: "The user has uploaded documents that I need to process and review thoroughly. I'll analyze each document to extract key information, identify relevant sections for S-1 filing requirements that will be essential for drafting a comprehensive S-1 statement.",
+              bullets: [
+                "Understand the business structure and financials",
+                "Locate risk factors and material agreements", 
+                "Compile insights for risk"
+              ],
+              additionalText: ""
+            };
+            
+            // Initialize loading state
+            const loadingState = {
+              showSummary: false,
+              visibleBullets: 0,
+              showAdditionalText: false,
+              visibleChildStates: 0
+            };
+            
+            // Add assistant message with thinking states
+            const assistantMessage: Message = {
+              role: 'assistant',
+              content: '',
+              type: 'text',
+              thinkingContent,
+              loadingState,
+              isLoading: true,
+              isWorkflowResponse: true,
+              workflowTitle: workflowMessage?.workflowTitle
+            };
+            
+            updateChatById(chatId, chat => ({
+              ...chat,
+              messages: [...chat.messages, assistantMessage]
+            }));
+            setTimeout(() => scrollToBottom(), 100);
+            
+            // Progressive reveal of thinking states
+            setTimeout(() => {
+              updateChatById(chatId, chat => ({
+                ...chat,
+                messages: chat.messages.map((msg, idx) => 
+                  idx === chat.messages.length - 1 && msg.role === 'assistant' && msg.isLoading && msg.loadingState
+                    ? { ...msg, loadingState: { ...msg.loadingState, showSummary: true } }
+                    : msg
+                )
+              }));
+              scrollToBottom();
+            }, 600);
+            
+            // Show bullets progressively
+            thinkingContent.bullets.forEach((_, bulletIdx) => {
+              setTimeout(() => {
+                updateChatById(chatId, chat => ({
+                  ...chat,
+                  messages: chat.messages.map((msg, idx) => 
+                    idx === chat.messages.length - 1 && msg.role === 'assistant' && msg.isLoading && msg.loadingState
+                      ? { ...msg, loadingState: { ...msg.loadingState, visibleBullets: bulletIdx + 1 } }
+                      : msg
+                  )
+                }));
+                scrollToBottom();
+              }, 1000 + (bulletIdx * 400));
+            });
+            
+            // After thinking completes, show the actual response
+            setTimeout(() => {
+              updateChatById(chatId, chat => ({
+                ...chat,
+                messages: chat.messages.map((msg, idx) => {
+                  if (idx === chat.messages.length - 1 && msg.role === 'assistant' && msg.isLoading) {
+                    return {
+                      ...msg,
+                      content: `Thank you for uploading the files. I'm currently processing and reviewing the documents to understand their content and context. I'll provide you with a summary and insights shortly.`,
+                      isLoading: false,
+                      loadingState: undefined,
+                      showFileReview: false
+                    };
+                  }
+                  return msg;
+                })
+              }));
+              
+              setTimeout(() => scrollToBottom(), 100);
+              
+              // Show file review thinking state after a delay
+              setTimeout(() => {
+                // Convert uploaded files to the format needed for file review
+                const reviewFiles = files.slice(0, 9).map(file => {
+                  const fileName = file.name.toLowerCase();
+                  let fileType: 'pdf' | 'docx' | 'spreadsheet' | 'folder' | 'text' = 'text';
+                  
+                  if (file.type === 'folder') {
+                    fileType = 'folder';
+                  } else if (fileName.endsWith('.pdf')) {
+                    fileType = 'pdf';
+                  } else if (fileName.endsWith('.docx') || fileName.endsWith('.doc')) {
+                    fileType = 'docx';
+                  } else if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+                    fileType = 'spreadsheet';
+                  }
+                  
+                  return {
+                    name: file.name.length > 30 ? file.name.substring(0, 27) + '...' : file.name,
+                    type: fileType
+                  };
+                });
+                
+                updateChatById(chatId, chat => ({
+                  ...chat,
+                  messages: chat.messages.map((msg, idx) => {
+                    if (idx === chat.messages.length - 1 && msg.role === 'assistant') {
+                      return {
+                        ...msg,
+                        showFileReview: true,
+                        fileReviewContent: {
+                          summary: isRiskFactorsWorkflow
+                            ? "I will review all the uploaded documents to identify and extract risk factors including business risks, operational challenges, financial exposures, regulatory considerations, and competitive threats."
+                            : "I will review all the uploaded documents to extract key information needed for the S-1 registration statement, including business operations, financial data, risk factors, and material agreements.",
+                          files: reviewFiles,
+                          totalFiles: files.length
+                        },
+                        fileReviewLoadingState: {
+                          isLoading: true,
+                          loadedFiles: 0
+                        }
+                      };
+                    }
+                    return msg;
+                  })
+                }));
+                
+                setTimeout(() => scrollToBottom(), 100);
+                
+                // Progressively load each file
+                reviewFiles.forEach((_, fileIdx) => {
+                  setTimeout(() => {
+                    updateChatById(chatId, chat => ({
+                      ...chat,
+                      messages: chat.messages.map((msg, idx) => {
+                        if (idx === chat.messages.length - 1 && msg.role === 'assistant' && msg.fileReviewLoadingState) {
+                          return {
+                            ...msg,
+                            fileReviewLoadingState: {
+                              ...msg.fileReviewLoadingState,
+                              loadedFiles: fileIdx + 1
+                            }
+                          };
+                        }
+                        return msg;
+                      })
+                    }));
+                  }, 1000 + (fileIdx * 300));
+                });
+                
+                // After all files are loaded, complete the review
+                const reviewFileCount = reviewFiles.length;
+                const reviewFilesCompleteDelay = 1000 + (reviewFileCount * 300) + 500;
+                setTimeout(() => {
+                  updateChatById(chatId, chat => ({
+                    ...chat,
+                    messages: chat.messages.map((msg, idx) => {
+                      if (idx === chat.messages.length - 1 && msg.role === 'assistant') {
+                        return {
+                          ...msg,
+                          fileReviewLoadingState: {
+                            isLoading: false,
+                            loadedFiles: reviewFileCount
+                          }
+                        };
+                      }
+                      return msg;
+                    })
+                  }));
+                  
+                  setTimeout(() => scrollToBottom(), 100);
+                  
+                  // Show appropriate next step based on workflow type
+                  setTimeout(() => {
+                    if (isRiskFactorsWorkflow) {
+                      // For Risk Factors workflow, wait for user to select counsel filter
+                      updateChatById(chatId, chat => ({
+                        ...chat,
+                        isLoading: false,
+                        agentState: {
+                          ...chat.agentState,
+                          currentAction: 'Awaiting user input...',
+                          isAwaitingInput: true,
+                        }
+                      }));
+                    } else {
+                      // For S-1 Shell workflow, show draft generation
+                      updateChatById(chatId, chat => ({
+                        ...chat,
+                        messages: chat.messages.map((msg, idx) => {
+                          if (idx === chat.messages.length - 1 && msg.role === 'assistant') {
+                            return {
+                              ...msg,
+                              showDraftGeneration: true,
+                              draftGenerationLoadingState: {
+                                isLoading: true,
+                                showSummary: false,
+                                visibleBullets: 0
+                              }
+                            };
+                          }
+                          return msg;
+                        })
+                      }));
+                      
+                      // Progressive reveal of draft generation
+                      setTimeout(() => {
+                        updateChatById(chatId, chat => ({
+                          ...chat,
+                          messages: chat.messages.map((msg, idx) => {
+                            if (idx === chat.messages.length - 1 && msg.role === 'assistant' && msg.draftGenerationLoadingState?.isLoading) {
+                              return {
+                                ...msg,
+                                draftGenerationLoadingState: {
+                                  ...msg.draftGenerationLoadingState,
+                                  showSummary: true
+                                }
+                              };
+                            }
+                            return msg;
+                          })
+                        }));
+                      }, 600);
+                      
+                      // Show bullets progressively
+                      const draftBullets = getThinkingContent('draft').bullets;
+                      draftBullets.forEach((_, bulletIdx) => {
+                        setTimeout(() => {
+                          updateChatById(chatId, chat => ({
+                            ...chat,
+                            messages: chat.messages.map((msg, idx) => {
+                              if (idx === chat.messages.length - 1 && msg.role === 'assistant' && msg.draftGenerationLoadingState?.isLoading) {
+                                return {
+                                  ...msg,
+                                  draftGenerationLoadingState: {
+                                    ...msg.draftGenerationLoadingState,
+                                    visibleBullets: bulletIdx + 1
+                                  }
+                                };
+                              }
+                              return msg;
+                            })
+                          }));
+                        }, 1000 + (bulletIdx * 400));
+                      });
+                      
+                      // Complete draft generation and show artifact
+                      setTimeout(() => {
+                        updateChatById(chatId, chat => ({
+                          ...chat,
+                          isLoading: false,
+                          messages: chat.messages.map((msg, idx) => {
+                            if (idx === chat.messages.length - 1 && msg.role === 'assistant') {
+                              return {
+                                ...msg,
+                                draftGenerationLoadingState: {
+                                  isLoading: false,
+                                  showSummary: true,
+                                  visibleBullets: draftBullets.length
+                                },
+                                artifactData: {
+                                  title: 'S-1 Registration Statement Shell',
+                                  subtitle: 'Draft v1',
+                                  variant: 'draft' as const
+                                }
+                              };
+                            }
+                            return msg;
+                          }),
+                          agentState: {
+                            isRunning: false,
+                            taskName: '',
+                          }
+                        }));
+                        
+                        setTimeout(() => scrollToBottom(), 100);
+                      }, 3500);
+                    }
+                    
+                    setTimeout(() => scrollToBottom(), 100);
+                  }, 800);
+                }, reviewFilesCompleteDelay);
+              }, 800);
+            }, 2800);
+          }, 500);
+        }}
+      />
+      <VaultFilePickerDialog
+        isOpen={isVaultPickerOpen}
+        onClose={() => setIsVaultPickerOpen(false)}
+        vaultName="Stubhub IPO Filing"
+        onFilesSelected={(files) => {
+          setIsVaultPickerOpen(false);
+          
+          // Ensure a chat exists and get the chatId
+          const chatId = ensureChatExists();
+          
+          // Update chat state using the specific chatId - preserve existing title if it's a workflow
+          updateChatById(chatId, chat => ({
+            ...chat,
+            isLoading: true,
+            messages: [...chat.messages, {
+              role: 'user' as const,
+              content: '',
+              type: 'files' as const,
+              filesData: files,
+              fileSource: 'vault' as const
             }],
             agentState: {
               ...chat.agentState,

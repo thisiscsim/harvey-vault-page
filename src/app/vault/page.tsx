@@ -349,37 +349,34 @@ export default function VaultPage() {
                     >
                   {/* Icon container */}
                   <div 
-                    className="w-full rounded-lg flex items-center justify-center mb-2.5 transition-colors relative overflow-hidden" 
+                    className="w-full rounded-lg flex items-center justify-center mb-2.5 relative overflow-hidden" 
                     style={{ 
                       height: '162px',
-                      backgroundColor: projectColor ? `${projectColor}1F` : undefined,
+                      backgroundColor: projectColor ? `${projectColor}1F` : 'var(--bg-subtle)',
+                      transition: 'background-color 0.3s ease',
                     }}
                   >
-                    {!projectColor && (
-                      <div className="absolute inset-0 bg-bg-subtle group-hover:bg-bg-subtle-hover transition-colors" />
-                    )}
-                    {projectColor ? (
-                      <div 
-                        className="w-[72px] h-[72px] relative z-10"
-                        style={{
-                          backgroundColor: projectColor,
-                          WebkitMaskImage: `url(${iconSrc})`,
-                          WebkitMaskSize: 'contain',
-                          WebkitMaskRepeat: 'no-repeat',
-                          WebkitMaskPosition: 'center',
-                          maskImage: `url(${iconSrc})`,
-                          maskSize: 'contain',
-                          maskRepeat: 'no-repeat',
-                          maskPosition: 'center',
-                        }}
-                      />
-                    ) : (
-                      <img 
-                        src={iconSrc}
-                        alt={`${project.name} icon`}
-                        className="w-[72px] h-[72px] relative z-10"
-                      />
-                    )}
+                    {/* Hover overlay for non-colored state */}
+                    <div 
+                      className="absolute inset-0 bg-transparent group-hover:bg-bg-subtle-hover transition-colors pointer-events-none"
+                      style={{ opacity: projectColor ? 0 : 1 }}
+                    />
+                    {/* Icon with mask for color */}
+                    <div 
+                      className="w-[72px] h-[72px] relative z-10"
+                      style={{
+                        backgroundColor: projectColor || '#CCCAC6',
+                        WebkitMaskImage: `url(${iconSrc})`,
+                        WebkitMaskSize: 'contain',
+                        WebkitMaskRepeat: 'no-repeat',
+                        WebkitMaskPosition: 'center',
+                        maskImage: `url(${iconSrc})`,
+                        maskSize: 'contain',
+                        maskRepeat: 'no-repeat',
+                        maskPosition: 'center',
+                        transition: 'background-color 0.3s ease',
+                      }}
+                    />
                   </div>
                   
                   {/* Title and menu */}
