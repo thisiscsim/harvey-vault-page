@@ -15,6 +15,7 @@ import { SidebarInset } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { Spinner } from "@/components/ui/spinner";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { workflows as allWorkflows, type Workflow, type WorkflowType } from "@/lib/workflows";
 import Image from "next/image";
 import ThinkingState from "@/components/thinking-state";
@@ -1938,22 +1939,22 @@ export default function StubhubIPOFilingPage() {
               {chatThreads.length > 0 && (
                 <div className="px-4 py-3 border-b border-border-base flex items-center justify-between" style={{ height: '52px' }}>
                   {/* Chat Tabs */}
-                  <div className="flex items-center gap-1 overflow-hidden flex-1 min-w-0 max-w-[calc(100%-48px)]" style={{ flexWrap: 'nowrap' }}>
+                  <div className="flex items-center gap-1 overflow-x-auto flex-1 min-w-0 max-w-[calc(100%-48px)]" style={{ flexWrap: 'nowrap', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                     {chatThreads.map((thread) => (
                       <div
                         key={thread.id}
                         className={cn(
-                          "relative flex items-center rounded-md transition-colors flex-shrink-0 group/tab",
+                          "relative flex items-center rounded-md transition-colors shrink-0 group/tab",
                           thread.id === activeChatId
                             ? "bg-bg-subtle"
                             : "hover:bg-bg-subtle"
                         )}
-                        style={{ maxWidth: '200px', minWidth: 'fit-content' }}
+                        style={{ maxWidth: '200px' }}
                       >
                         <button
                           onClick={() => setActiveChatId(thread.id)}
                           className={cn(
-                            "text-sm font-medium whitespace-nowrap overflow-hidden relative text-ellipsis",
+                            "text-sm font-medium whitespace-nowrap overflow-hidden text-ellipsis",
                             thread.id === activeChatId
                               ? "text-fg-base"
                               : "text-fg-muted hover:text-fg-base"
@@ -2000,13 +2001,21 @@ export default function StubhubIPOFilingPage() {
                       </div>
                     ))}
                   </div>
-                  <button 
-                    onClick={createNewChat}
-                    className="p-2 hover:bg-bg-subtle rounded-md transition-colors flex-shrink-0"
-                    title="New chat"
-                  >
-                    <Plus size={16} className="text-fg-muted" />
-                  </button>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button 
+                          onClick={createNewChat}
+                          className="p-2 hover:bg-bg-subtle rounded-md transition-colors flex-shrink-0"
+                        >
+                          <Plus size={16} className="text-fg-muted" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        New chat
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
               )}
               

@@ -235,8 +235,8 @@ export default function ConfigurationDrawer({
       <div className="-mx-4 px-4 pt-2 relative">
         <div className="flex items-center justify-between h-[36px]">
           <span className="text-xs font-medium text-fg-base leading-[20px]">Sources</span>
-          <button className="h-[24px] px-[6px] py-[2px] text-xs font-medium text-fg-subtle hover:text-fg-base transition-colors leading-[16px]">
-            See all
+          <button className="h-[24px] px-2 text-xs font-medium text-fg-subtle hover:text-fg-base hover:bg-bg-subtle rounded-[6px] transition-colors leading-[16px]">
+            View all
           </button>
         </div>
         <div className="space-y-0.5 max-h-[400px] overflow-hidden -mx-2 px-2 pb-8">
@@ -379,8 +379,8 @@ export default function ConfigurationDrawer({
       <div className="border-t border-border-base -mx-4 px-4 pt-2">
         <div className="flex items-center justify-between h-[44px]">
           <span className="text-xs font-medium text-fg-base leading-[20px]">Activity</span>
-          <button className="h-[24px] px-[6px] py-[2px] text-xs font-medium text-fg-subtle hover:text-fg-base transition-colors leading-[16px]">
-            See all
+          <button className="h-[24px] px-2 text-xs font-medium text-fg-subtle hover:text-fg-base hover:bg-bg-subtle rounded-[6px] transition-colors leading-[16px]">
+            View all
           </button>
         </div>
         <div className="relative">
@@ -419,7 +419,7 @@ export default function ConfigurationDrawer({
   const sourcesContent = (
     <>
       {/* Search and Filter Section */}
-      <div className="px-0.5 pb-4">
+      <div className="px-0.5 pt-4 pb-4">
         <div className="flex gap-2">
           {/* Search Input */}
           <div className="flex-1 relative">
@@ -548,11 +548,11 @@ export default function ConfigurationDrawer({
         ))}
       </div>
 
-      {/* See all link */}
+      {/* View all link */}
       <div className="mt-6 pt-4 border-t border-border-base -mx-4 px-4">
         <div className="px-0.5">
-          <button className="text-sm text-fg-subtle hover:text-fg-base transition-colors flex items-center gap-1">
-            See all
+          <button className="h-[24px] px-2 text-xs font-medium text-fg-subtle hover:text-fg-base hover:bg-bg-subtle rounded-[6px] transition-colors flex items-center gap-1">
+            View all
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="m9 18 6-6-6-6"/>
             </svg>
