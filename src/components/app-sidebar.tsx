@@ -76,7 +76,7 @@ const vaultProjects = [
   { id: 2, name: "M&A (US)", href: "/vault/ma-us" },
   { id: 3, name: "Cross-Border Tax Strategies", href: "/vault/cross-border-tax" },
   { id: 4, name: "Reevo AI - Series B Financing", href: "/reevo-ai-series-b" },
-  { id: 5, name: "Regulatory Compliance Audit", href: "/vault/regulatory-compliance" },
+  { id: 5, name: "Regulatory Compliance Audit", href: "/regulatory-compliance-audit" },
 ]
 
 // Bottom menu items
@@ -119,7 +119,7 @@ export function AppSidebar() {
   // Determine the selected item based on current path
   const getSelectedItem = () => {
     // Check if the current path is a vault sub-page
-    if (pathname === "/vault" || pathname === "/stubhub-ipo-filing" || pathname === "/reevo-ai-series-b" || pathname.startsWith("/vault/")) {
+    if (pathname === "/vault" || pathname === "/stubhub-ipo-filing" || pathname === "/reevo-ai-series-b" || pathname === "/regulatory-compliance-audit" || pathname.startsWith("/vault/")) {
       return "Vault"
     }
     
@@ -297,7 +297,7 @@ export function AppSidebar() {
                   // Vault menu item should only show active state when:
                   // 1. On /vault page directly, OR
                   // 2. On a vault project AND (submenu is closed OR sidebar is collapsed)
-                  const isOnVaultProject = pathname === "/stubhub-ipo-filing" || pathname === "/reevo-ai-series-b" || pathname.startsWith("/vault/")
+                  const isOnVaultProject = pathname === "/stubhub-ipo-filing" || pathname === "/reevo-ai-series-b" || pathname === "/regulatory-compliance-audit" || pathname.startsWith("/vault/")
                   const isSubmenuVisible = isVaultOpen && state === "expanded"
                   const isVaultItemActive = pathname === "/vault" || (isOnVaultProject && !isSubmenuVisible)
                   

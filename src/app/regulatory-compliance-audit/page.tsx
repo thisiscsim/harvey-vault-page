@@ -7,7 +7,7 @@ import {
   FileIcon, MessageSquare, Upload, Share2, Edit3,
   Scale, Paperclip, Mic, CornerDownLeft, CloudUpload, FolderPlus, SlidersHorizontal,
   Plus, Copy, Download, RotateCcw, ThumbsUp, ThumbsDown, ListPlus, SquarePen,
-  Maximize2
+  Maximize2, Search
 } from "lucide-react";
 import {
   useReactTable,
@@ -107,6 +107,42 @@ const mockFiles: UploadedFile[] = [
   { id: '15', name: 'Regulatory_Change_Analysis.xlsx', size: 789012, type: 'application/xlsx', uploadProgress: 100, status: 'completed', uploadedAt: new Date('2025-11-15'), category: categoryOptions[2] },
 ];
 
+// Query chip types
+interface QueryChip {
+  label: string;
+  icon: string;
+}
+
+const chipTypes = {
+  query: { label: 'Query', icon: '/central_icons/Assistant.svg' },
+  reviewTable: { label: 'Review table', icon: '/central_icons/Review.svg' },
+  draft: { label: 'Draft', icon: '/central_icons/Draft.svg' },
+};
+
+// Query interface
+interface Query {
+  id: string;
+  name: string;
+  chips: QueryChip[];
+  lastModified: Date;
+  createdOn: Date;
+  createdBy: string;
+}
+
+// Mock queries data
+const mockQueries: Query[] = [
+  { id: 'q1', name: 'What are the key GDPR compliance requirements?', chips: [chipTypes.query], lastModified: new Date('2026-01-27'), createdOn: new Date('2026-01-25'), createdBy: 'Sarah Chen' },
+  { id: 'q2', name: 'Summarize SOX control testing results', chips: [chipTypes.reviewTable, chipTypes.query], lastModified: new Date('2026-01-26'), createdOn: new Date('2026-01-24'), createdBy: 'Michael Ross' },
+  { id: 'q3', name: 'Compare AML procedures across jurisdictions', chips: [chipTypes.query], lastModified: new Date('2026-01-25'), createdOn: new Date('2026-01-23'), createdBy: 'Sarah Chen' },
+  { id: 'q4', name: 'Extract key findings from Q4 compliance report', chips: [chipTypes.draft, chipTypes.query], lastModified: new Date('2026-01-24'), createdOn: new Date('2026-01-22'), createdBy: 'David Kim' },
+  { id: 'q5', name: 'Analyze data privacy assessment gaps', chips: [chipTypes.query], lastModified: new Date('2026-01-23'), createdOn: new Date('2026-01-21'), createdBy: 'Emily Zhang' },
+  { id: 'q6', name: 'What regulatory changes affect our operations?', chips: [chipTypes.reviewTable, chipTypes.query], lastModified: new Date('2026-01-22'), createdOn: new Date('2026-01-20'), createdBy: 'Michael Ross' },
+  { id: 'q7', name: 'Summary of vendor risk assessment findings', chips: [chipTypes.query], lastModified: new Date('2026-01-21'), createdOn: new Date('2026-01-19'), createdBy: 'Sarah Chen' },
+  { id: 'q8', name: 'Compare incident response procedures', chips: [chipTypes.draft, chipTypes.query], lastModified: new Date('2026-01-20'), createdOn: new Date('2026-01-18'), createdBy: 'David Kim' },
+  { id: 'q9', name: 'Extract sanctions screening results', chips: [chipTypes.query], lastModified: new Date('2026-01-19'), createdOn: new Date('2026-01-17'), createdBy: 'Emily Zhang' },
+  { id: 'q10', name: 'Analyze board compliance report trends', chips: [chipTypes.query], lastModified: new Date('2026-01-18'), createdOn: new Date('2026-01-16'), createdBy: 'Michael Ross' },
+];
+
 // Floating Action Bar Component
 function FloatingActionBar({ isExpanded }: { isExpanded: boolean }) {
   return (
@@ -143,7 +179,7 @@ function FloatingActionBar({ isExpanded }: { isExpanded: boolean }) {
                     </button>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="bg-fg-base text-bg-base text-xs px-2 py-1">
-                    Expand
+                    Show all
                   </TooltipContent>
                 </Tooltip>
                 
@@ -265,6 +301,7 @@ export default function RegulatoryComplianceAuditPage() {
   // Card hover states for floating action bars
   const [isReviewedCardHovered, setIsReviewedCardHovered] = useState(false);
   const [isRedFlagsCardHovered, setIsRedFlagsCardHovered] = useState(false);
+  const [isGapAnalysisCardHovered, setIsGapAnalysisCardHovered] = useState(false);
   
   // File table state
   const [files] = useState<UploadedFile[]>(mockFiles);
@@ -273,6 +310,11 @@ export default function RegulatoryComplianceAuditPage() {
   const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
   const [rowsPerPage, setRowsPerPage] = useState(20);
   const [currentPage, setCurrentPage] = useState(1);
+  
+  // Queries table state
+  const [queries] = useState<Query[]>(mockQueries);
+  const [hoveredQueryRowId, setHoveredQueryRowId] = useState<string | null>(null);
+  const [querySearchQuery, setQuerySearchQuery] = useState("");
   
   // Toggle row selection
   const toggleRowSelection = useCallback((id: string) => {
@@ -771,6 +813,10 @@ export default function RegulatoryComplianceAuditPage() {
                   <Users className="h-4 w-4" />
                   Share
                 </Button>
+                <Button variant="default" size="medium" className="gap-1.5">
+                  <Upload className="h-4 w-4" />
+                  Upload
+                </Button>
                 {!isChatPanelOpen && (
                   <button 
                     onClick={() => setIsChatPanelOpen(true)}
@@ -847,9 +893,10 @@ export default function RegulatoryComplianceAuditPage() {
 
               {/* Content Area */}
               <div className="flex-1 px-6 py-6">
+                {activeTab === "overview" && (
                 <div>
                   {/* Dashboard Cards */}
-                  <div className="grid grid-cols-2 gap-3 mb-6">
+                  <div className="grid grid-cols-3 gap-3 mb-6">
                     {/* Reviewed Documents Card */}
                     <div 
                       className="border border-border-base rounded-[10px] flex flex-col overflow-hidden relative" 
@@ -877,10 +924,10 @@ export default function RegulatoryComplianceAuditPage() {
                           </div>
                           <div className="flex flex-col">
                             <span className="text-sm font-medium text-fg-base leading-5">Reviewed documents</span>
-                            <span className="text-xs text-fg-subtle leading-4">Progress of human-reviewed files</span>
+                            <span className="text-xs text-fg-subtle leading-4 truncate">Progress of human-reviewed files</span>
                           </div>
                         </div>
-                        <span className="px-1 bg-[#d1fae5] text-[#065f46] text-[10px] font-medium rounded h-4 flex items-center leading-[14px]">60% reviewed</span>
+                        <span className="px-1 bg-[#d1fae5] text-[#065f46] text-[10px] font-medium rounded h-4 flex items-center leading-[14px] whitespace-nowrap">60% reviewed</span>
                       </div>
                       
                       {/* Progress Items */}
@@ -892,7 +939,12 @@ export default function RegulatoryComplianceAuditPage() {
                             <span className="px-1 bg-bg-subtle text-fg-muted text-[10px] font-medium rounded h-4 flex items-center leading-[14px]">6/8 documents</span>
                           </div>
                           <div className="h-1.5 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
-                            <div className="h-full bg-fg-base rounded-full" style={{ width: '75%' }} />
+                            <motion.div 
+                              className="h-full bg-fg-base rounded-full" 
+                              initial={{ width: '0%' }}
+                              animate={{ width: '75%' }}
+                              transition={{ duration: 0.8, delay: 0.2, ease: 'easeOut' }}
+                            />
                           </div>
                         </div>
                         
@@ -903,7 +955,12 @@ export default function RegulatoryComplianceAuditPage() {
                             <span className="px-1 bg-bg-subtle text-fg-muted text-[10px] font-medium rounded h-4 flex items-center leading-[14px]">7/8 documents</span>
                           </div>
                           <div className="h-1.5 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
-                            <div className="h-full bg-fg-base rounded-full" style={{ width: '87.5%' }} />
+                            <motion.div 
+                              className="h-full bg-fg-base rounded-full" 
+                              initial={{ width: '0%' }}
+                              animate={{ width: '87.5%' }}
+                              transition={{ duration: 0.8, delay: 0.3, ease: 'easeOut' }}
+                            />
                           </div>
                         </div>
                         
@@ -914,7 +971,12 @@ export default function RegulatoryComplianceAuditPage() {
                             <span className="px-1 bg-bg-subtle text-fg-muted text-[10px] font-medium rounded h-4 flex items-center leading-[14px]">0/8 documents</span>
                           </div>
                           <div className="h-1.5 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
-                            <div className="h-full bg-fg-base rounded-full" style={{ width: '0%' }} />
+                            <motion.div 
+                              className="h-full bg-fg-base rounded-full" 
+                              initial={{ width: '0%' }}
+                              animate={{ width: '0%' }}
+                              transition={{ duration: 0.8, delay: 0.4, ease: 'easeOut' }}
+                            />
                           </div>
                         </div>
                         
@@ -925,7 +987,12 @@ export default function RegulatoryComplianceAuditPage() {
                             <span className="px-1 bg-bg-subtle text-fg-muted text-[10px] font-medium rounded h-4 flex items-center leading-[14px]">2/8 documents</span>
                           </div>
                           <div className="h-1.5 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
-                            <div className="h-full bg-fg-base rounded-full" style={{ width: '25%' }} />
+                            <motion.div 
+                              className="h-full bg-fg-base rounded-full" 
+                              initial={{ width: '0%' }}
+                              animate={{ width: '25%' }}
+                              transition={{ duration: 0.8, delay: 0.5, ease: 'easeOut' }}
+                            />
                           </div>
                         </div>
                         
@@ -936,7 +1003,12 @@ export default function RegulatoryComplianceAuditPage() {
                             <span className="px-1 bg-bg-subtle text-fg-muted text-[10px] font-medium rounded h-4 flex items-center leading-[14px]">1/8 documents</span>
                           </div>
                           <div className="h-1.5 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
-                            <div className="h-full bg-fg-base rounded-full" style={{ width: '12.5%' }} />
+                            <motion.div 
+                              className="h-full bg-fg-base rounded-full" 
+                              initial={{ width: '0%' }}
+                              animate={{ width: '12.5%' }}
+                              transition={{ duration: 0.8, delay: 0.6, ease: 'easeOut' }}
+                            />
                           </div>
                         </div>
                       </div>
@@ -969,10 +1041,10 @@ export default function RegulatoryComplianceAuditPage() {
                           </div>
                           <div className="flex flex-col">
                             <span className="text-sm font-medium text-fg-base leading-5">Red flags</span>
-                            <span className="text-xs text-fg-subtle leading-4">Highest detected risk per document</span>
+                            <span className="text-xs text-fg-subtle leading-4 truncate">Highest detected risk per document</span>
                           </div>
                         </div>
-                        <span className="px-1 bg-[#ffe4e6] text-[#9f1239] text-[10px] font-medium rounded h-4 flex items-center leading-[14px]">11 documents flagged</span>
+                        <span className="px-1 bg-[#ffe4e6] text-[#9f1239] text-[10px] font-medium rounded h-4 flex items-center leading-[14px] whitespace-nowrap">11 documents flagged</span>
                       </div>
                       
                       {/* Risk Items */}
@@ -985,9 +1057,26 @@ export default function RegulatoryComplianceAuditPage() {
                           </div>
                           <div className="flex flex-col gap-2">
                             <div className="flex gap-1 h-1.5">
-                              <div className="flex-1 bg-[#fda4af] rounded-sm" />
-                              <div className="bg-[#e11d48] rounded-sm" style={{ width: '70%' }} />
-                              <div className="bg-[#ff7502] rounded-sm" style={{ width: '10%' }} />
+                              <motion.div 
+                                className="flex-1 bg-[#fda4af] rounded-sm origin-left" 
+                                initial={{ scaleX: 0 }}
+                                animate={{ scaleX: 1 }}
+                                transition={{ duration: 0.6, delay: 0.3, ease: 'easeOut' }}
+                              />
+                              <motion.div 
+                                className="bg-[#e11d48] rounded-sm origin-left" 
+                                style={{ width: '70%' }}
+                                initial={{ scaleX: 0 }}
+                                animate={{ scaleX: 1 }}
+                                transition={{ duration: 0.6, delay: 0.4, ease: 'easeOut' }}
+                              />
+                              <motion.div 
+                                className="bg-[#ff7502] rounded-sm origin-left" 
+                                style={{ width: '10%' }}
+                                initial={{ scaleX: 0 }}
+                                animate={{ scaleX: 1 }}
+                                transition={{ duration: 0.6, delay: 0.5, ease: 'easeOut' }}
+                              />
                             </div>
                             <div className="flex items-center gap-3">
                               <div className="flex items-center gap-2">
@@ -1014,8 +1103,19 @@ export default function RegulatoryComplianceAuditPage() {
                           </div>
                           <div className="flex flex-col gap-2">
                             <div className="flex gap-1 h-1.5">
-                              <div className="bg-[#fda4af] rounded-sm" style={{ width: '75%' }} />
-                              <div className="flex-1 bg-[#e11d48] rounded-sm" />
+                              <motion.div 
+                                className="bg-[#fda4af] rounded-sm origin-left" 
+                                style={{ width: '75%' }}
+                                initial={{ scaleX: 0 }}
+                                animate={{ scaleX: 1 }}
+                                transition={{ duration: 0.6, delay: 0.5, ease: 'easeOut' }}
+                              />
+                              <motion.div 
+                                className="flex-1 bg-[#e11d48] rounded-sm origin-left" 
+                                initial={{ scaleX: 0 }}
+                                animate={{ scaleX: 1 }}
+                                transition={{ duration: 0.6, delay: 0.6, ease: 'easeOut' }}
+                              />
                             </div>
                             <div className="flex items-center gap-3">
                               <div className="flex items-center gap-2">
@@ -1055,18 +1155,135 @@ export default function RegulatoryComplianceAuditPage() {
                         </div>
                       </div>
                     </div>
+                    
+                    {/* Gap Analysis Card */}
+                    <div 
+                      className="border border-border-base rounded-[10px] flex flex-col overflow-hidden relative" 
+                      style={{ height: '350px' }}
+                      onMouseEnter={() => setIsGapAnalysisCardHovered(true)}
+                      onMouseLeave={() => setIsGapAnalysisCardHovered(false)}
+                    >
+                      {/* Bottom gradient overlay */}
+                      <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-bg-base to-transparent pointer-events-none z-10" />
+                      
+                      {/* Floating Action Bar */}
+                      <FloatingActionBar isExpanded={isGapAnalysisCardHovered} />
+                      
+                      {/* Card Header */}
+                      <div className="border-b border-border-base flex items-center justify-between p-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-bg-subtle flex items-center justify-center">
+                            <SvgIcon 
+                              src="/central_icons/Code Analyze - Filled.svg" 
+                              alt="Gap analysis"
+                              width={20} 
+                              height={20} 
+                              className="text-fg-subtle"
+                            />
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium text-fg-base leading-5">Gap analysis</span>
+                            <span className="text-xs text-fg-subtle leading-4 truncate">Complete document types by area</span>
+                          </div>
+                        </div>
+                        <span className="px-1 bg-[#dbeafe] text-[#1e40af] text-[10px] font-medium rounded h-4 flex items-center leading-[14px] whitespace-nowrap">20% provided</span>
+                      </div>
+                      
+                      {/* Gap Items */}
+                      <div className="flex flex-col">
+                        {/* Real estate */}
+                        <div className="p-3 flex flex-col gap-[15px]">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-fg-base leading-4">Real estate</span>
+                            <span className="px-1 bg-bg-subtle text-fg-muted text-[10px] font-medium rounded h-4 flex items-center leading-[14px]">2 / 3 types</span>
+                          </div>
+                          <div className="h-1.5 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
+                            <motion.div 
+                              className="h-full bg-[#1E40AF] rounded-full" 
+                              initial={{ width: '0%' }}
+                              animate={{ width: '67%' }}
+                              transition={{ duration: 0.8, delay: 0.2, ease: 'easeOut' }}
+                            />
+                          </div>
+                        </div>
+                        
+                        {/* Commercial */}
+                        <div className="p-3 flex flex-col gap-[15px]">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-fg-base leading-4">Commercial</span>
+                            <span className="px-1 bg-bg-subtle text-fg-muted text-[10px] font-medium rounded h-4 flex items-center leading-[14px]">4 / 4 types</span>
+                          </div>
+                          <div className="h-1.5 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
+                            <motion.div 
+                              className="h-full bg-[#1E40AF] rounded-full" 
+                              initial={{ width: '0%' }}
+                              animate={{ width: '100%' }}
+                              transition={{ duration: 0.8, delay: 0.3, ease: 'easeOut' }}
+                            />
+                          </div>
+                        </div>
+                        
+                        {/* Corporation */}
+                        <div className="p-3 flex flex-col gap-[15px]">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-fg-base leading-4">Corporation</span>
+                            <span className="px-1 bg-bg-subtle text-fg-muted text-[10px] font-medium rounded h-4 flex items-center leading-[14px]">1 / 2 types</span>
+                          </div>
+                          <div className="h-1.5 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
+                            <motion.div 
+                              className="h-full bg-[#1E40AF] rounded-full" 
+                              initial={{ width: '0%' }}
+                              animate={{ width: '50%' }}
+                              transition={{ duration: 0.8, delay: 0.4, ease: 'easeOut' }}
+                            />
+                          </div>
+                        </div>
+                        
+                        {/* Other */}
+                        <div className="p-3 flex flex-col gap-[15px]">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-fg-base leading-4">Other</span>
+                            <span className="px-1 bg-bg-subtle text-fg-muted text-[10px] font-medium rounded h-4 flex items-center leading-[14px]">0 / 2 types</span>
+                          </div>
+                          <div className="h-1.5 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
+                            <motion.div 
+                              className="h-full bg-[#1E40AF] rounded-full" 
+                              initial={{ width: '0%' }}
+                              animate={{ width: '0%' }}
+                              transition={{ duration: 0.8, delay: 0.5, ease: 'easeOut' }}
+                            />
+                          </div>
+                        </div>
+                        
+                        {/* IP */}
+                        <div className="p-3 flex flex-col gap-[15px]">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-fg-base leading-4">IP</span>
+                            <span className="px-1 bg-bg-subtle text-fg-muted text-[10px] font-medium rounded h-4 flex items-center leading-[14px]">1 / 3 types</span>
+                          </div>
+                          <div className="h-1.5 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
+                            <motion.div 
+                              className="h-full bg-[#1E40AF] rounded-full" 
+                              initial={{ width: '0%' }}
+                              animate={{ width: '33%' }}
+                              transition={{ duration: 0.8, delay: 0.6, ease: 'easeOut' }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Files Section Header */}
                   <div className="flex items-center justify-between mb-4">
                     <span className="text-sm font-medium text-fg-base">Files</span>
                     <div className="flex items-center gap-[6px]">
-                      <button className="h-[24px] px-[7px] py-[3px] text-xs font-medium text-fg-base border border-border-base rounded-[6px] hover:bg-bg-subtle transition-colors flex items-center gap-[6px]">
-                        <FolderPlus className="w-3 h-3" />
+                      <button className="h-7 px-2 text-xs font-medium text-fg-base border border-border-base rounded-[6px] hover:bg-bg-subtle transition-colors flex items-center gap-1.5">
+                        <FolderPlus className="w-3.5 h-3.5" />
                         Create folder
                       </button>
-                      <button className="h-[24px] px-[7px] py-[3px] text-xs font-medium text-fg-base border border-border-base rounded-[6px] hover:bg-bg-subtle transition-colors flex items-center gap-[6px]">
-                        <SlidersHorizontal className="w-3 h-3" />
+                      <button className="h-7 px-2 text-xs font-medium text-fg-base border border-border-base rounded-[6px] hover:bg-bg-subtle transition-colors flex items-center gap-1.5">
+                        <SlidersHorizontal className="w-3.5 h-3.5" />
                         Filters
                       </button>
                     </div>
@@ -1347,6 +1564,158 @@ export default function RegulatoryComplianceAuditPage() {
                     </div>
                   </div>
                 </div>
+                )}
+                
+                {activeTab === "queries" && (
+                <div>
+                  {/* Queries Section Header */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="relative w-[320px] min-w-[128px] h-7">
+                      <div className="flex items-center w-full h-full px-2 py-1.5 bg-white border border-border-base rounded-md">
+                        <div className="flex items-center gap-2 flex-1">
+                          <Search className="w-4 h-4 text-fg-muted shrink-0" />
+                          <input
+                            type="text"
+                            placeholder="Search"
+                            value={querySearchQuery}
+                            onChange={(e) => setQuerySearchQuery(e.target.value)}
+                            className="flex-1 bg-transparent border-none outline-none text-sm text-fg-base placeholder:text-fg-muted"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-[6px]">
+                      <button className="h-7 px-2 text-xs font-medium text-fg-base border border-border-base rounded-[6px] hover:bg-bg-subtle transition-colors flex items-center gap-1.5">
+                        <SlidersHorizontal className="w-3.5 h-3.5" />
+                        Filters
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Queries Table */}
+                  <div className="flex flex-col w-full">
+                    {/* Header Row */}
+                    <div className="flex items-center h-10 border-b border-border-base sticky top-0 bg-bg-base z-20">
+                      {/* Name Header */}
+                      <div className="flex-1 flex items-center gap-2 h-full px-1 py-3">
+                        <span className="text-xs font-medium text-fg-subtle leading-4">Name</span>
+                      </div>
+                      {/* Query Type Header */}
+                      <div className="w-[280px] flex items-center gap-2 h-full px-1 py-3 shrink-0">
+                        <span className="text-xs font-medium text-fg-muted leading-4">Query type</span>
+                      </div>
+                      {/* Last Modified Header */}
+                      <div className="w-[140px] flex items-center gap-2 h-full px-1 py-3 shrink-0">
+                        <span className="text-xs font-medium text-fg-muted leading-4">Last modified</span>
+                      </div>
+                      {/* Created On Header */}
+                      <div className="w-[140px] flex items-center gap-2 h-full px-1 py-3 shrink-0">
+                        <span className="text-xs font-medium text-fg-muted leading-4">Created on</span>
+                      </div>
+                      {/* Created By Header */}
+                      <div className="w-[140px] flex items-center gap-2 h-full px-1 py-3 shrink-0">
+                        <span className="text-xs font-medium text-fg-muted leading-4">Created by</span>
+                      </div>
+                    </div>
+                    
+                    {/* Table Rows */}
+                    <div className="flex flex-col">
+                      {queries
+                        .filter(query => query.name.toLowerCase().includes(querySearchQuery.toLowerCase()))
+                        .map(query => {
+                        const isHovered = hoveredQueryRowId === query.id;
+                        
+                        return (
+                          <div 
+                            key={query.id}
+                            className="flex items-center h-10 border-b border-border-base relative group cursor-pointer"
+                            onMouseEnter={() => setHoveredQueryRowId(query.id)}
+                            onMouseLeave={() => setHoveredQueryRowId(null)}
+                          >
+                            {/* Row Background - extends beyond bounds */}
+                            {isHovered && (
+                              <div 
+                                className="absolute inset-y-[-1px] -left-4 -right-4 bg-bg-base-hover rounded-xl pointer-events-none"
+                                style={{ zIndex: 0 }}
+                              />
+                            )}
+                            
+                            {/* Name Cell */}
+                            <div className="flex-1 flex items-center gap-2 h-full px-1 py-3 overflow-hidden z-10">
+                              <span className="text-sm text-fg-base leading-5 truncate">{query.name}</span>
+                            </div>
+                            
+                            {/* Query Type Cell */}
+                            <div className="w-[280px] flex items-center gap-1.5 h-full px-1 py-3 shrink-0 z-10">
+                              {query.chips.map((chip, idx) => (
+                                <div key={idx} className="flex items-center gap-1 bg-bg-subtle rounded-full px-2 py-1">
+                                  <SvgIcon src={chip.icon} alt={chip.label} width={14} height={14} className="text-fg-subtle shrink-0" />
+                                  <span className="text-xs font-medium text-fg-subtle leading-4">{chip.label}</span>
+                                </div>
+                              ))}
+                            </div>
+                            
+                            {/* Last Modified Cell */}
+                            <div className="w-[140px] flex items-center h-full px-1 py-3 shrink-0 z-10">
+                              <span className="text-sm text-fg-muted leading-5">
+                                {query.lastModified.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                              </span>
+                            </div>
+                            
+                            {/* Created On Cell */}
+                            <div className="w-[140px] flex items-center h-full px-1 py-3 shrink-0 z-10">
+                              <span className="text-sm text-fg-muted leading-5">
+                                {query.createdOn.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                              </span>
+                            </div>
+                            
+                            {/* Created By Cell */}
+                            <div className="w-[140px] flex items-center h-full px-1 py-3 shrink-0 z-10">
+                              <span className="text-sm text-fg-muted leading-5">{query.createdBy}</span>
+                            </div>
+                            
+                            {/* Hover Action Buttons */}
+                            {isHovered && (
+                              <div className="absolute -right-4 top-0 bottom-0 flex items-center pr-4 z-20">
+                                {/* Gradient fade */}
+                                <div className="absolute inset-y-0 bg-gradient-to-r from-transparent to-bg-base-hover pointer-events-none" style={{ right: '100%', width: '64px' }} />
+                                {/* Solid background behind buttons */}
+                                <div className="absolute inset-0 bg-bg-base-hover rounded-r-xl pointer-events-none" />
+                                <div className="flex items-center gap-0 relative z-10">
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <button className="w-8 h-8 flex items-center justify-center rounded-lg text-fg-subtle hover:text-fg-base hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                                          <Copy className="w-4 h-4" />
+                                        </button>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="top">
+                                        <p>Duplicate</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <button className="w-8 h-8 flex items-center justify-center rounded-lg text-fg-subtle hover:text-fg-base hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                                          <Download className="w-4 h-4" />
+                                        </button>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="top">
+                                        <p>Download</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+                )}
               </div>
             </div>
           </div>
@@ -1824,12 +2193,12 @@ export default function RegulatoryComplianceAuditPage() {
                         </div>
                         <span className="text-xs text-fg-base leading-[16px] flex-1">1d ago</span>
                       </div>
-                      <div className="flex items-start">
+                      <div className="flex items-center">
                         <div className="flex items-center gap-[4px] w-[122px] shrink-0 h-[28px] text-fg-subtle">
                           <SvgIcon src="/central_icons/Description.svg" alt="Description" width={16} height={16} className="text-fg-subtle" />
                           <span className="text-xs leading-[16px]">Description</span>
                         </div>
-                        <div className="flex-1 p-[6px] rounded-[6px]">
+                        <div className="flex-1 rounded-[6px]">
                           <button className="text-xs text-fg-muted hover:text-fg-base transition-colors leading-[16px]">Set description</button>
                         </div>
                       </div>

@@ -693,12 +693,12 @@ function StagingExampleContent() {
                     <div className="flex items-center justify-between mb-4">
                       <span className="text-sm font-medium text-fg-base">Files</span>
                       <div className="flex items-center gap-[6px]">
-                        <button className="h-[24px] px-[7px] py-[3px] text-xs font-medium text-fg-base border border-border-base rounded-[6px] hover:bg-bg-subtle transition-colors flex items-center gap-[6px]">
-                          <FolderPlus className="w-3 h-3" />
+                        <button className="h-7 px-2 text-xs font-medium text-fg-base border border-border-base rounded-[6px] hover:bg-bg-subtle transition-colors flex items-center gap-1.5">
+                          <FolderPlus className="w-3.5 h-3.5" />
                           Create folder
                         </button>
-                        <button className="h-[24px] px-[7px] py-[3px] text-xs font-medium text-fg-base border border-border-base rounded-[6px] hover:bg-bg-subtle transition-colors flex items-center gap-[6px]">
-                          <SlidersHorizontal className="w-3 h-3" />
+                        <button className="h-7 px-2 text-xs font-medium text-fg-base border border-border-base rounded-[6px] hover:bg-bg-subtle transition-colors flex items-center gap-1.5">
+                          <SlidersHorizontal className="w-3.5 h-3.5" />
                           Filters
                         </button>
                       </div>
@@ -1121,12 +1121,12 @@ function StagingExampleContent() {
                         </div>
                         <span className="text-xs text-fg-base leading-[16px] flex-1">Just now</span>
                       </div>
-                      <div className="flex items-start">
+                      <div className="flex items-center">
                         <div className="flex items-center gap-[4px] w-[122px] shrink-0 h-[28px] text-fg-subtle">
                           <SvgIcon src="/central_icons/Description.svg" alt="Description" width={16} height={16} className="text-fg-subtle" />
                           <span className="text-xs leading-[16px]">Description</span>
                         </div>
-                        <div className="flex-1 p-[6px] rounded-[6px]">
+                        <div className="flex-1 rounded-[6px]">
                           <button className="text-xs text-fg-muted hover:text-fg-base transition-colors leading-[16px]">Set description</button>
                         </div>
                       </div>

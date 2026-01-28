@@ -2,14 +2,18 @@
 
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset } from "@/components/ui/sidebar";
-import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { SvgIcon } from "@/components/svg-icon";
+import { ArrowLeft, Upload } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 
 function ProjectContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const projectName = searchParams.get('name') || 'Untitled';
+  const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   
   return (
     <div className="flex h-screen w-full">
@@ -21,7 +25,7 @@ function ProjectContent() {
         <div className="h-screen flex flex-col bg-bg-base">
           {/* Header with back button */}
           <div 
-            className="px-3 py-4 flex items-center" 
+            className="px-3 py-4 flex items-center justify-between" 
             style={{ height: '52px' }}
           >
             {/* Back Button */}
@@ -31,6 +35,28 @@ function ProjectContent() {
             >
               <ArrowLeft size={16} className="text-fg-subtle" />
             </button>
+            
+            {/* Right side buttons */}
+            <div className="flex items-center gap-2">
+              {uploadedFiles.length > 0 && (
+                <Button variant="default" size="medium" className="gap-1.5">
+                  <Upload className="h-4 w-4" />
+                  Upload
+                </Button>
+              )}
+              <button 
+                onClick={() => setIsDrawerOpen(!isDrawerOpen)}
+                className="h-7 w-7 flex items-center justify-center border border-border-base rounded-[6px] hover:bg-bg-subtle transition-colors"
+              >
+                <SvgIcon 
+                  src={isDrawerOpen ? "/central_icons/RightSidebar - Filled.svg" : "/central_icons/RightSidebar.svg"}
+                  alt="Toggle drawer"
+                  width={16} 
+                  height={16} 
+                  className="text-fg-base"
+                />
+              </button>
+            </div>
           </div>
           
           <div className="w-full xl:max-w-[1500px] xl:mx-auto flex flex-col h-full px-10">

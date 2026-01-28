@@ -5,7 +5,8 @@ import {
   ArrowLeft, Users, Briefcase, ChevronRight,
   Calendar, Tag, User, Clock, FileIcon, 
   MessageSquare, Upload, Share2, Edit3,
-  Scale, Paperclip, Mic, CornerDownLeft, CloudUpload, FolderPlus, SlidersHorizontal
+  Scale, Paperclip, Mic, CornerDownLeft, CloudUpload, FolderPlus, SlidersHorizontal,
+  Copy, Download, Search
 } from "lucide-react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset } from "@/components/ui/sidebar";
@@ -120,6 +121,40 @@ const mockFiles: UploadedFile[] = [
   { id: '15', name: 'Audited_Financials_2025.pdf', size: 5678901, type: 'application/pdf', uploadProgress: 100, status: 'completed', uploadedAt: new Date('2025-11-30'), category: categoryOptions[2] },
 ];
 
+// Query chip types
+interface QueryChip {
+  label: string;
+  icon: string;
+}
+
+const chipTypes = {
+  query: { label: 'Query', icon: '/central_icons/Assistant.svg' },
+  reviewTable: { label: 'Review table', icon: '/central_icons/Review.svg' },
+  draft: { label: 'Draft', icon: '/central_icons/Draft.svg' },
+};
+
+// Query interface
+interface Query {
+  id: string;
+  name: string;
+  chips: QueryChip[];
+  lastModified: Date;
+  createdOn: Date;
+  createdBy: string;
+}
+
+// Mock queries data for Reevo Series B
+const mockQueries: Query[] = [
+  { id: 'q1', name: 'What are the key terms in the Series B term sheet?', chips: [chipTypes.query], lastModified: new Date('2026-01-27'), createdOn: new Date('2026-01-25'), createdBy: 'Alex Johnson' },
+  { id: 'q2', name: 'Summarize the financial projections for 2026', chips: [chipTypes.reviewTable, chipTypes.query], lastModified: new Date('2026-01-26'), createdOn: new Date('2026-01-24'), createdBy: 'Sarah Chen' },
+  { id: 'q3', name: 'Compare investor rights across different rounds', chips: [chipTypes.query], lastModified: new Date('2026-01-25'), createdOn: new Date('2026-01-23'), createdBy: 'Michael Ross' },
+  { id: 'q4', name: 'Extract key findings from technical DD report', chips: [chipTypes.draft, chipTypes.query], lastModified: new Date('2026-01-24'), createdOn: new Date('2026-01-22'), createdBy: 'Alex Johnson' },
+  { id: 'q5', name: 'Analyze cap table changes post-Series B', chips: [chipTypes.query], lastModified: new Date('2026-01-23'), createdOn: new Date('2026-01-21'), createdBy: 'David Kim' },
+  { id: 'q6', name: 'What IP assignments need to be completed?', chips: [chipTypes.reviewTable, chipTypes.query], lastModified: new Date('2026-01-22'), createdOn: new Date('2026-01-20'), createdBy: 'Sarah Chen' },
+  { id: 'q7', name: 'Summary of board consent requirements', chips: [chipTypes.draft, chipTypes.query], lastModified: new Date('2026-01-21'), createdOn: new Date('2026-01-19'), createdBy: 'Michael Ross' },
+  { id: 'q8', name: 'Compare stock option plans to market standards', chips: [chipTypes.query], lastModified: new Date('2026-01-20'), createdOn: new Date('2026-01-18'), createdBy: 'David Kim' },
+];
+
 export default function ReevoAISeriesBPage() {
   const router = useRouter();
   const [projectName, setProjectName] = useState("Reevo AI - Series B Financing");
@@ -140,6 +175,11 @@ export default function ReevoAISeriesBPage() {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
+  
+  // Queries table state
+  const [queries] = useState<Query[]>(mockQueries);
+  const [hoveredQueryRowId, setHoveredQueryRowId] = useState<string | null>(null);
+  const [querySearchQuery, setQuerySearchQuery] = useState("");
   const [rowsPerPage, setRowsPerPage] = useState(20);
   const [currentPage, setCurrentPage] = useState(1);
   
@@ -378,6 +418,10 @@ export default function ReevoAISeriesBPage() {
                   <Users className="h-4 w-4" />
                   Share
                 </Button>
+                <Button variant="default" size="medium" className="gap-1.5">
+                  <Upload className="h-4 w-4" />
+                  Upload
+                </Button>
                 {isConfigPanelCollapsed && (
                   <button 
                     onClick={() => setIsConfigPanelCollapsed(false)}
@@ -440,6 +484,7 @@ export default function ReevoAISeriesBPage() {
 
               {/* Content Area */}
               <div className="flex-1 px-6 py-6">
+                {activeTab === "overview" && (
                 <div>
                   {/* Chat and Action Buttons - Centered */}
                   <div className="flex flex-col items-center">
@@ -569,12 +614,12 @@ export default function ReevoAISeriesBPage() {
                   <div className="flex items-center justify-between mt-8 mb-4">
                     <span className="text-sm font-medium text-fg-base">Files</span>
                     <div className="flex items-center gap-[6px]">
-                      <button className="h-[24px] px-[7px] py-[3px] text-xs font-medium text-fg-base border border-border-base rounded-[6px] hover:bg-bg-subtle transition-colors flex items-center gap-[6px]">
-                        <FolderPlus className="w-3 h-3" />
+                      <button className="h-7 px-2 text-xs font-medium text-fg-base border border-border-base rounded-[6px] hover:bg-bg-subtle transition-colors flex items-center gap-1.5">
+                        <FolderPlus className="w-3.5 h-3.5" />
                         Create folder
                       </button>
-                      <button className="h-[24px] px-[7px] py-[3px] text-xs font-medium text-fg-base border border-border-base rounded-[6px] hover:bg-bg-subtle transition-colors flex items-center gap-[6px]">
-                        <SlidersHorizontal className="w-3 h-3" />
+                      <button className="h-7 px-2 text-xs font-medium text-fg-base border border-border-base rounded-[6px] hover:bg-bg-subtle transition-colors flex items-center gap-1.5">
+                        <SlidersHorizontal className="w-3.5 h-3.5" />
                         Filters
                       </button>
                     </div>
@@ -855,6 +900,158 @@ export default function ReevoAISeriesBPage() {
                     </div>
                   </div>
                 </div>
+                )}
+                
+                {activeTab === "queries" && (
+                <div>
+                  {/* Queries Section Header */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="relative w-[320px] min-w-[128px] h-7">
+                      <div className="flex items-center w-full h-full px-2 py-1.5 bg-white border border-border-base rounded-md">
+                        <div className="flex items-center gap-2 flex-1">
+                          <Search className="w-4 h-4 text-fg-muted shrink-0" />
+                          <input
+                            type="text"
+                            placeholder="Search"
+                            value={querySearchQuery}
+                            onChange={(e) => setQuerySearchQuery(e.target.value)}
+                            className="flex-1 bg-transparent border-none outline-none text-sm text-fg-base placeholder:text-fg-muted"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-[6px]">
+                      <button className="h-7 px-2 text-xs font-medium text-fg-base border border-border-base rounded-[6px] hover:bg-bg-subtle transition-colors flex items-center gap-1.5">
+                        <SlidersHorizontal className="w-3.5 h-3.5" />
+                        Filters
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Queries Table */}
+                  <div className="flex flex-col w-full">
+                    {/* Header Row */}
+                    <div className="flex items-center h-10 border-b border-border-base sticky top-0 bg-bg-base z-20">
+                      {/* Name Header */}
+                      <div className="flex-1 flex items-center gap-2 h-full px-1 py-3">
+                        <span className="text-xs font-medium text-fg-subtle leading-4">Name</span>
+                      </div>
+                      {/* Query Type Header */}
+                      <div className="w-[280px] flex items-center gap-2 h-full px-1 py-3 shrink-0">
+                        <span className="text-xs font-medium text-fg-muted leading-4">Query type</span>
+                      </div>
+                      {/* Last Modified Header */}
+                      <div className="w-[140px] flex items-center gap-2 h-full px-1 py-3 shrink-0">
+                        <span className="text-xs font-medium text-fg-muted leading-4">Last modified</span>
+                      </div>
+                      {/* Created On Header */}
+                      <div className="w-[140px] flex items-center gap-2 h-full px-1 py-3 shrink-0">
+                        <span className="text-xs font-medium text-fg-muted leading-4">Created on</span>
+                      </div>
+                      {/* Created By Header */}
+                      <div className="w-[140px] flex items-center gap-2 h-full px-1 py-3 shrink-0">
+                        <span className="text-xs font-medium text-fg-muted leading-4">Created by</span>
+                      </div>
+                    </div>
+                    
+                    {/* Table Rows */}
+                    <div className="flex flex-col">
+                      {queries
+                        .filter(query => query.name.toLowerCase().includes(querySearchQuery.toLowerCase()))
+                        .map(query => {
+                        const isHovered = hoveredQueryRowId === query.id;
+                        
+                        return (
+                          <div 
+                            key={query.id}
+                            className="flex items-center h-10 border-b border-border-base relative group cursor-pointer"
+                            onMouseEnter={() => setHoveredQueryRowId(query.id)}
+                            onMouseLeave={() => setHoveredQueryRowId(null)}
+                          >
+                            {/* Row Background - extends beyond bounds */}
+                            {isHovered && (
+                              <div 
+                                className="absolute inset-y-[-1px] -left-4 -right-4 bg-bg-base-hover rounded-xl pointer-events-none"
+                                style={{ zIndex: 0 }}
+                              />
+                            )}
+                            
+                            {/* Name Cell */}
+                            <div className="flex-1 flex items-center gap-2 h-full px-1 py-3 overflow-hidden z-10">
+                              <span className="text-sm text-fg-base leading-5 truncate">{query.name}</span>
+                            </div>
+                            
+                            {/* Query Type Cell */}
+                            <div className="w-[280px] flex items-center gap-1.5 h-full px-1 py-3 shrink-0 z-10">
+                              {query.chips.map((chip, idx) => (
+                                <div key={idx} className="flex items-center gap-1 bg-bg-subtle rounded-full px-2 py-1">
+                                  <SvgIcon src={chip.icon} alt={chip.label} width={14} height={14} className="text-fg-subtle shrink-0" />
+                                  <span className="text-xs font-medium text-fg-subtle leading-4">{chip.label}</span>
+                                </div>
+                              ))}
+                            </div>
+                            
+                            {/* Last Modified Cell */}
+                            <div className="w-[140px] flex items-center h-full px-1 py-3 shrink-0 z-10">
+                              <span className="text-sm text-fg-muted leading-5">
+                                {query.lastModified.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                              </span>
+                            </div>
+                            
+                            {/* Created On Cell */}
+                            <div className="w-[140px] flex items-center h-full px-1 py-3 shrink-0 z-10">
+                              <span className="text-sm text-fg-muted leading-5">
+                                {query.createdOn.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                              </span>
+                            </div>
+                            
+                            {/* Created By Cell */}
+                            <div className="w-[140px] flex items-center h-full px-1 py-3 shrink-0 z-10">
+                              <span className="text-sm text-fg-muted leading-5">{query.createdBy}</span>
+                            </div>
+                            
+                            {/* Hover Action Buttons */}
+                            {isHovered && (
+                              <div className="absolute -right-4 top-0 bottom-0 flex items-center pr-4 z-20">
+                                {/* Gradient fade */}
+                                <div className="absolute inset-y-0 bg-gradient-to-r from-transparent to-bg-base-hover pointer-events-none" style={{ right: '100%', width: '64px' }} />
+                                {/* Solid background behind buttons */}
+                                <div className="absolute inset-0 bg-bg-base-hover rounded-r-xl pointer-events-none" />
+                                <div className="flex items-center gap-0 relative z-10">
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <button className="w-8 h-8 flex items-center justify-center rounded-lg text-fg-subtle hover:text-fg-base hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                                          <Copy className="w-4 h-4" />
+                                        </button>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="top">
+                                        <p>Duplicate</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <button className="w-8 h-8 flex items-center justify-center rounded-lg text-fg-subtle hover:text-fg-base hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                                          <Download className="w-4 h-4" />
+                                        </button>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="top">
+                                        <p>Download</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+                )}
               </div>
             </div>
           </div>
@@ -931,12 +1128,12 @@ export default function ReevoAISeriesBPage() {
                         </div>
                         <span className="text-xs text-fg-base leading-[16px] flex-1">2d ago</span>
                       </div>
-                      <div className="flex items-start">
+                      <div className="flex items-center">
                         <div className="flex items-center gap-[4px] w-[122px] shrink-0 h-[28px] text-fg-subtle">
                           <SvgIcon src="/central_icons/Description.svg" alt="Description" width={16} height={16} className="text-fg-subtle" />
                           <span className="text-xs leading-[16px]">Description</span>
                         </div>
-                        <div className="flex-1 p-[6px] rounded-[6px]">
+                        <div className="flex-1 rounded-[6px]">
                           <button className="text-xs text-fg-muted hover:text-fg-base transition-colors leading-[16px]">Set description</button>
                         </div>
                       </div>
