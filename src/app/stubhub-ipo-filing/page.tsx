@@ -1394,15 +1394,17 @@ export default function StubhubIPOFilingPage() {
                 }
               }));
               
-              // Auto-open the artifact panel
+              // Auto-open the artifact panel only if still in the same chat
               setTimeout(() => {
-                setSelectedDraftArtifact({ title: artifactTitle, subtitle: artifactSubtitle });
-                setCurrentArtifactType('draft');
-                setUnifiedArtifactPanelOpen(true);
-                setDraftArtifactPanelOpen(true);
-                setReviewArtifactPanelOpen(false);
-                // Set content type based on artifact title
-                setDraftContentType(artifactTitle.toLowerCase().includes('s-1') ? 's1-shell' : 'memorandum');
+                if (activeChatIdRef.current === chatId) {
+                  setSelectedDraftArtifact({ title: artifactTitle, subtitle: artifactSubtitle });
+                  setCurrentArtifactType('draft');
+                  setUnifiedArtifactPanelOpen(true);
+                  setDraftArtifactPanelOpen(true);
+                  setReviewArtifactPanelOpen(false);
+                  // Set content type based on artifact title
+                  setDraftContentType(artifactTitle.toLowerCase().includes('s-1') ? 's1-shell' : 'memorandum');
+                }
               }, 300);
               
               setTimeout(() => scrollToBottom(), 100);
@@ -3227,6 +3229,9 @@ export default function StubhubIPOFilingPage() {
                                                             }));
                                                           }}
                                                           onConfirm={(selectedCompanies) => {
+                                                            // Capture current chat ID for later check
+                                                            const currentChatId = activeChatIdRef.current;
+                                                            
                                                             // Update message to show confirmed state and start review table generation
                                                             setMessages(prev => prev.map((msg, idx) => {
                                                               if (idx === prev.length - 1 && msg.role === 'assistant' && msg.precedentCompaniesData) {
@@ -3326,8 +3331,11 @@ export default function StubhubIPOFilingPage() {
                                                               });
                                                               
                                                               setTimeout(() => {
-                                                                setUnifiedArtifactPanelOpen(true);
-                                                                setReviewArtifactPanelOpen(true);
+                                                                // Only auto-open if still in the same chat
+                                                                if (activeChatIdRef.current === currentChatId) {
+                                                                  setUnifiedArtifactPanelOpen(true);
+                                                                  setReviewArtifactPanelOpen(true);
+                                                                }
                                                               }, 800);
                                                             }, 5600);
                                                           }}

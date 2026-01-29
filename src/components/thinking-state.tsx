@@ -211,14 +211,14 @@ export default function ThinkingState({
             <Tooltip>
               <TooltipTrigger asChild>
                 {isLoading ? (
-                  <div>
+                  <span className="inline-block w-fit">
                     <TextShimmer 
                       duration={1.5} 
                       spread={3}
                     >
                       {headerLabel}
                     </TextShimmer>
-                  </div>
+                  </span>
                 ) : (
                   <span className="font-medium truncate inline-block">
                     {headerLabel}

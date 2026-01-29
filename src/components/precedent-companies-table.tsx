@@ -51,15 +51,6 @@ export default function PrecedentCompaniesTable({
   const [data, setData] = useState<CompanyData[]>(initialData);
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
   const [isConfirmed, setIsConfirmed] = useState(isConfirmedProp);
-  const [hasAnimated, setHasAnimated] = useState(false);
-  
-  // Mark animation as complete after initial render
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setHasAnimated(true);
-    }, 1500); // Wait for all animations to complete
-    return () => clearTimeout(timer);
-  }, []);
   
   // Use internal state if no prop is provided (for backward compatibility)
   const [internalGoldenPrecedentId, setInternalGoldenPrecedentId] = useState<string | null>(null);
@@ -225,14 +216,8 @@ export default function PrecedentCompaniesTable({
         <div className="flex items-center gap-3">
           <div className="w-[100px] h-1 bg-neutral-200 rounded-full overflow-hidden">
             <div 
-              className={cn(
-                "h-full rounded-full bg-[#7c3aed]",
-                !hasAnimated && "animate-grow-width"
-              )}
-              style={{ 
-                width: `${row.original.similarity}%`,
-                ...(!hasAnimated && { animationDelay: `${0.1 + row.index * 0.05}s` })
-              }}
+              className="h-full rounded-full bg-[#7c3aed]"
+              style={{ width: `${row.original.similarity}%` }}
             />
           </div>
           <span className="text-sm text-fg-subtle min-w-[3ch]">{row.original.similarity}%</span>
