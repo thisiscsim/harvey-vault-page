@@ -4,8 +4,9 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, MoreHorizontal, ArrowLeft } from "lucide-react";
+import { Search, MoreHorizontal, ArrowLeft, RefreshCw } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { AnimatedBackground } from "../../../components/motion-primitives/animated-background";
 import Link from "next/link";
@@ -19,14 +20,68 @@ import {
 // Default grayscale color (not selectable, used as initial state)
 const defaultGrayColor = '#CCCAC6';
 
-// Color options for project cards (user can optionally select one)
-const colorOptions = [
-  { id: 'yellow', color: '#F59E0B', label: 'Yellow' },
-  { id: 'red', color: '#C17C76', label: 'Red' },
-  { id: 'blue', color: '#3B82F6', label: 'Blue' },
-  { id: 'teal', color: '#569197', label: 'Teal' },
-  { id: 'brown', color: '#92400E', label: 'Brown' },
-] as const;
+// Color palettes for project cards
+const colorPalettes = {
+  'dusty': {
+    id: 'dusty',
+    label: 'Dusty',
+    colors: [
+      { id: 'ochre', color: '#C9A05C', label: 'Muted Ochre' },
+      { id: 'maroon', color: '#C17C76', label: 'Dusty Maroon' },
+      { id: 'sea', color: '#6B8CA6', label: 'Muted Sea' },
+      { id: 'teal', color: '#569197', label: 'Muted Teal' },
+      { id: 'lavender', color: '#8A7A9E', label: 'Dusty Lavender' },
+    ],
+  },
+  'tailwind': {
+    id: 'tailwind',
+    label: 'Tailwind',
+    colors: [
+      { id: 'amber', color: '#F59E0B', label: 'Amber 500' },
+      { id: 'red', color: '#EF4444', label: 'Red 500' },
+      { id: 'blue', color: '#3B82F6', label: 'Blue 500' },
+      { id: 'teal', color: '#14B8A6', label: 'Teal 500' },
+      { id: 'violet', color: '#8B5CF6', label: 'Violet 500' },
+    ],
+  },
+  'brooding': {
+    id: 'brooding',
+    label: 'Brooding',
+    colors: [
+      { id: 'khaki', color: '#9E9B82', label: 'Muted Khaki' },
+      { id: 'mauve', color: '#A8898A', label: 'Dusty Mauve' },
+      { id: 'slate', color: '#7A8B96', label: 'Storm Slate' },
+      { id: 'forest', color: '#6B7F73', label: 'Deep Forest' },
+      { id: 'plum', color: '#7D6B7D', label: 'Moody Plum' },
+    ],
+  },
+  'vibrance': {
+    id: 'vibrance',
+    label: 'Vibrance',
+    colors: [
+      { id: 'gold', color: '#C9922B', label: 'Accent Gold' },
+      { id: 'olive', color: '#6B8E4E', label: 'Accent Olive' },
+      { id: 'blue', color: '#4A90A4', label: 'Accent Blue' },
+      { id: 'violet', color: '#5B5FC7', label: 'Brand Violet' },
+      { id: 'coral', color: '#D4735E', label: 'Warm Coral' },
+    ],
+  },
+  'skittles': {
+    id: 'skittles',
+    label: 'Skittles',
+    editable: true,
+    colors: [
+      { id: 'color1', color: '#F59E0B', label: 'Color 1' },
+      { id: 'color2', color: '#EF4444', label: 'Color 2' },
+      { id: 'color3', color: '#3B82F6', label: 'Color 3' },
+      { id: 'color4', color: '#14B8A6', label: 'Color 4' },
+      { id: 'color5', color: '#8B5CF6', label: 'Color 5' },
+    ],
+  },
+} as const;
+
+// Default color options (for backward compatibility)
+const colorOptions = colorPalettes['dusty'].colors;
 
 // Pattern options for project card backgrounds
 const patternOptions = [
@@ -45,12 +100,95 @@ export default function VaultPage() {
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedPattern, setSelectedPattern] = useState<string | null>(null);
   const projectNameInputRef = useRef<HTMLInputElement>(null);
+  const colorPopoverRef = useRef<HTMLDivElement>(null);
+  const paletteDropdownButtonRef = useRef<HTMLButtonElement>(null);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
   
-  // Random colors state for project cards (toggled with 'C' key)
+  // Random colors state for project cards
   const [projectColors, setProjectColors] = useState<Record<number, string>>({});
   const [colorsEnabled, setColorsEnabled] = useState(false);
+  const [colorPopoverOpen, setColorPopoverOpen] = useState(false);
+  const [selectedPalette, setSelectedPalette] = useState<keyof typeof colorPalettes>('dusty');
+  const [paletteDropdownOpen, setPaletteDropdownOpen] = useState(false);
+  const [skittlesColors, setSkittlesColors] = useState<Record<string, string>>({
+    color1: '#F59E0B',
+    color2: '#EF4444',
+    color3: '#3B82F6',
+    color4: '#14B8A6',
+    color5: '#8B5CF6',
+  });
 
-  // Keyboard shortcut 'C' to toggle random colors on project cards
+  // Get colors for the current palette (handles editable Skittles palette)
+  const getCurrentPaletteColors = () => {
+    if (selectedPalette === 'skittles') {
+      return Object.entries(skittlesColors).map(([id, color]) => ({
+        id,
+        color,
+        label: `Color ${id.replace('color', '')}`,
+      }));
+    }
+    return [...colorPalettes[selectedPalette].colors];
+  };
+
+  // Generate random colors for projects based on selected palette
+  const generateRandomColors = () => {
+    const colors = getCurrentPaletteColors();
+    const newColors: Record<number, string> = {};
+    for (let i = 1; i <= 10; i++) {
+      const randomColor = colors[Math.floor(Math.random() * colors.length)];
+      newColors[i] = randomColor.color;
+    }
+    setProjectColors(newColors);
+  };
+
+  // Toggle colors on/off
+  const handleToggleColors = (enabled: boolean) => {
+    setColorsEnabled(enabled);
+    if (enabled) {
+      generateRandomColors();
+    }
+  };
+
+  // Handle palette selection
+  const handlePaletteSelect = (paletteId: keyof typeof colorPalettes) => {
+    setSelectedPalette(paletteId);
+    setPaletteDropdownOpen(false);
+    // If colors are enabled, regenerate with new palette
+    if (colorsEnabled) {
+      let colors;
+      if (paletteId === 'skittles') {
+        colors = Object.values(skittlesColors);
+      } else {
+        colors = colorPalettes[paletteId].colors.map(c => c.color);
+      }
+      const newColors: Record<number, string> = {};
+      for (let i = 1; i <= 10; i++) {
+        newColors[i] = colors[Math.floor(Math.random() * colors.length)];
+      }
+      setProjectColors(newColors);
+    }
+  };
+
+  // Handle color change for Skittles palette
+  const handleSkittlesColorChange = (colorId: string, newColor: string) => {
+    const oldColor = skittlesColors[colorId];
+    setSkittlesColors(prev => ({ ...prev, [colorId]: newColor }));
+    
+    // Update any project cards that were using the old color
+    if (colorsEnabled && selectedPalette === 'skittles') {
+      setProjectColors(prev => {
+        const updated = { ...prev };
+        for (const key in updated) {
+          if (updated[key].toUpperCase() === oldColor.toUpperCase()) {
+            updated[key] = newColor;
+          }
+        }
+        return updated;
+      });
+    }
+  };
+
+  // Keyboard shortcut 'C' to toggle color popover
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Don't trigger if user is typing in an input
@@ -59,25 +197,14 @@ export default function VaultPage() {
       }
       
       if (e.key === 'c' || e.key === 'C') {
-        setColorsEnabled(prev => {
-          const newEnabled = !prev;
-          if (newEnabled) {
-            // Generate random colors for all projects
-            const newColors: Record<number, string> = {};
-            for (let i = 1; i <= 10; i++) {
-              const randomColor = colorOptions[Math.floor(Math.random() * colorOptions.length)];
-              newColors[i] = randomColor.color;
-            }
-            setProjectColors(newColors);
-          }
-          return newEnabled;
-        });
+        setColorPopoverOpen(prev => !prev);
       }
     };
     
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
 
   // Auto-focus the project name input when dialog opens
   useEffect(() => {
@@ -414,6 +541,191 @@ export default function VaultPage() {
             </div>
           </div>
         </div>
+
+        {/* Color Palette Popover */}
+        {colorPopoverOpen && (
+          <div 
+            ref={colorPopoverRef}
+            className="fixed bg-bg-base border border-border-base overflow-hidden"
+            style={{ 
+              right: '24px', 
+              bottom: '24px',
+              width: '260px',
+              borderRadius: '8px',
+              boxShadow: '0px 4px 12px 0px rgba(0,0,0,0.1)',
+            }}
+          >
+            {/* Toggle Section */}
+            <div className="border-b border-border-base" style={{ padding: '4px 0' }}>
+              <div style={{ padding: '0 8px' }}>
+                <div className="flex items-center justify-between" style={{ padding: '8px', borderRadius: '6px' }}>
+                  <button
+                    onClick={() => handleToggleColors(!colorsEnabled)}
+                    className="flex items-center cursor-pointer"
+                    style={{ gap: '8px' }}
+                  >
+                    {/* Switch */}
+                    <div className="relative" style={{ width: '26px', height: '16px' }}>
+                      <div 
+                        className={`absolute inset-0 rounded-full transition-colors ${
+                          colorsEnabled ? 'bg-fg-base' : 'bg-border-strong'
+                        }`}
+                      />
+                      <div 
+                        className="absolute bg-bg-base rounded-full transition-all"
+                        style={{ 
+                          top: '2px', 
+                          left: colorsEnabled ? '12px' : '2px',
+                          width: '12px', 
+                          height: '12px',
+                          boxShadow: '0px 1px 3px 0px rgba(0,0,0,0.15)',
+                        }}
+                      />
+                    </div>
+                    <span className="text-fg-base" style={{ fontSize: '14px', lineHeight: '20px' }}>
+                      Let there be colors
+                    </span>
+                  </button>
+                  
+                  {/* Refresh Button */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={generateRandomColors}
+                    disabled={!colorsEnabled}
+                    className="h-7 w-7 p-0 text-fg-muted hover:text-fg-base disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Palette Selector & Colors Section */}
+            <div style={{ padding: '4px 0' }}>
+              {/* Palette Dropdown */}
+              <div style={{ padding: '8px' }}>
+                <div className="relative">
+                  <button 
+                    ref={paletteDropdownButtonRef}
+                    onClick={() => {
+                      if (!paletteDropdownOpen && paletteDropdownButtonRef.current) {
+                        const rect = paletteDropdownButtonRef.current.getBoundingClientRect();
+                        setDropdownPosition({
+                          top: rect.bottom + 6,
+                          left: rect.left,
+                          width: rect.width,
+                        });
+                      }
+                      setPaletteDropdownOpen(!paletteDropdownOpen);
+                    }}
+                    className="flex items-center justify-between bg-bg-base border border-border-base w-full cursor-pointer hover:border-border-strong transition-colors"
+                    style={{ padding: '6px 10px', borderRadius: '6px' }}
+                  >
+                    <span className="text-fg-base" style={{ fontSize: '14px', lineHeight: '20px' }}>
+                      {colorPalettes[selectedPalette].label}
+                    </span>
+                    <svg 
+                      width="16" 
+                      height="16" 
+                      viewBox="0 0 16 16" 
+                      fill="none" 
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="transition-transform text-fg-muted"
+                      style={{ transform: paletteDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                    >
+                      <path d="M4 6L8 10L12 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
+                  
+                  {/* Dropdown Menu - Using Portal */}
+                  {paletteDropdownOpen && typeof document !== 'undefined' && createPortal(
+                    <div 
+                      className="fixed bg-bg-base border border-border-base z-[9999]"
+                      style={{ 
+                        top: dropdownPosition.top,
+                        left: dropdownPosition.left,
+                        width: dropdownPosition.width,
+                        borderRadius: '6px',
+                        boxShadow: '0px 4px 12px 0px rgba(0,0,0,0.12)',
+                        padding: '4px',
+                      }}
+                    >
+                      {Object.values(colorPalettes).map((palette) => (
+                        <button
+                          key={palette.id}
+                          onClick={() => handlePaletteSelect(palette.id as keyof typeof colorPalettes)}
+                          className={`w-full text-left transition-colors ${
+                            selectedPalette === palette.id ? 'bg-bg-subtle' : 'hover:bg-bg-subtle'
+                          }`}
+                          style={{ 
+                            padding: '6px 8px', 
+                            fontSize: '14px', 
+                            lineHeight: '20px',
+                            borderRadius: '4px',
+                          }}
+                        >
+                          <span className="text-fg-base">{palette.label}</span>
+                        </button>
+                      ))}
+                    </div>,
+                    document.body
+                  )}
+                </div>
+              </div>
+
+              {/* Color List */}
+              {getCurrentPaletteColors().map((colorItem) => (
+                <div key={colorItem.id} style={{ padding: '0 8px' }}>
+                  <div 
+                    className="flex items-center"
+                    style={{ padding: '8px', borderRadius: '6px', gap: '6px' }}
+                  >
+                    {/* Color Swatch - clickable for Skittles */}
+                    {selectedPalette === 'skittles' ? (
+                      <div 
+                        className="relative shrink-0 cursor-pointer hover:ring-2 hover:ring-border-strong hover:ring-offset-1 transition-all"
+                        style={{ 
+                          width: '20px', 
+                          height: '20px', 
+                          borderRadius: '6px',
+                          backgroundColor: colorItem.color,
+                        }}
+                      >
+                        <input
+                          type="color"
+                          value={colorItem.color}
+                          onChange={(e) => handleSkittlesColorChange(colorItem.id, e.target.value.toUpperCase())}
+                          className="absolute inset-0 w-full h-full cursor-pointer"
+                          style={{ 
+                            opacity: 0,
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <div 
+                        className="shrink-0"
+                        style={{ 
+                          width: '20px', 
+                          height: '20px', 
+                          borderRadius: '6px',
+                          backgroundColor: colorItem.color,
+                        }}
+                      />
+                    )}
+                    <div 
+                      className="flex items-center justify-between flex-1"
+                      style={{ fontSize: '14px', lineHeight: '20px' }}
+                    >
+                      <span className="text-fg-base">{colorItem.label}</span>
+                      <span className="text-fg-subtle">{colorItem.color}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </SidebarInset>
 
       {/* Create Project Dialog */}
