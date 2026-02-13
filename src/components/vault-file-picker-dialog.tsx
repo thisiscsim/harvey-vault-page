@@ -211,7 +211,7 @@ export default function VaultFilePickerDialog({
         </div>
         <button
           onClick={onClose}
-          className="h-8 w-8 flex items-center justify-center rounded hover:bg-bg-subtle transition-colors text-fg-muted hover:text-fg-subtle self-start"
+          className="h-7 w-7 flex items-center justify-center rounded hover:bg-bg-subtle transition-colors text-fg-muted hover:text-fg-subtle self-start"
         >
           <X className="h-4 w-4" />
           <span className="sr-only">Close</span>

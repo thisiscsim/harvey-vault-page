@@ -243,7 +243,7 @@ export default function DraftArtifactPanel({
             {chatOpen && (
               <button 
                 onClick={onClose}
-                className="w-8 h-8 flex items-center justify-center rounded-[8px] hover:bg-bg-subtle transition-colors text-fg-subtle"
+                className="w-7 h-7 flex items-center justify-center rounded-[7px] hover:bg-bg-subtle transition-colors text-fg-subtle"
                 title="Close artifact"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

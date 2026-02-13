@@ -174,7 +174,7 @@ export default function SourcesDrawer({
           {/* Filter Dropdown */}
           <button 
             disabled
-            className="flex items-center gap-1 px-3 h-8 bg-bg-base border border-border-base rounded-md opacity-50 cursor-not-allowed"
+            className="flex items-center gap-1 px-3 h-7 bg-bg-base border border-border-base rounded-md opacity-50 cursor-not-allowed"
           >
             <span className="text-sm text-fg-base">All</span>
             <ChevronDown className="h-4 w-4 text-fg-muted" />

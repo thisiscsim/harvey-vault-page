@@ -70,6 +70,7 @@ interface ReviewTableToolbarProps {
   onAddColumn?: () => void;
   isGroupingFiles?: boolean;
   onGroupFiles?: () => void;
+  onBatchColumns?: () => void;
 }
 
 export default function ReviewTableToolbar({ 
@@ -82,7 +83,8 @@ export default function ReviewTableToolbar({
   hasFiles = false,
   onAddColumn,
   isGroupingFiles = false,
-  onGroupFiles
+  onGroupFiles,
+  onBatchColumns
 }: ReviewTableToolbarProps) {
   // Use props for alignment instead of local state
   const handleAlignmentChange = (newAlignment: 'top' | 'center' | 'bottom') => {
@@ -167,7 +169,7 @@ export default function ReviewTableToolbar({
               />
               <span>Add column</span>
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={onBatchColumns}>
               <SvgIcon 
                 src="/central_icons/Batch Columns.svg" 
                 alt="Batch columns" 

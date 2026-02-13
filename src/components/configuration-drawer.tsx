@@ -436,7 +436,7 @@ export default function ConfigurationDrawer({
           {/* Filter Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-1 px-3 h-8 bg-bg-base border border-border-base rounded-md hover:bg-bg-subtle transition-colors">
+              <button className="flex items-center gap-1 px-3 h-7 bg-bg-base border border-border-base rounded-md hover:bg-bg-subtle transition-colors">
                 <span className="text-sm text-fg-base">{filterType}</span>
                 <ChevronDown className="h-4 w-4 text-fg-muted" />
               </button>

@@ -27,7 +27,7 @@ export default function ExportReviewDialog({ isOpen, onClose, artifactTitle }: E
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 rounded-md"
+              className="h-7 w-7 rounded-md"
             >
               <X className="h-4 w-4" />
               <span className="sr-only">Close</span>

@@ -520,7 +520,7 @@ export default function VaultPage() {
                         )}
                       </div>
                     </div>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
+                    <Button variant="ghost" size="icon" className="p-0">
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </div>
@@ -883,7 +883,7 @@ export default function VaultPage() {
                     </p>
                     <p className="text-xs text-fg-muted m-0">0 files</p>
                   </div>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
+                  <Button variant="ghost" size="icon" className="p-0">
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
                 </div>

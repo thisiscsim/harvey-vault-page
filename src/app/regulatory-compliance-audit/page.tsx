@@ -1424,7 +1424,7 @@ export default function RegulatoryComplianceAuditPage() {
                                   <TooltipProvider>
                                     <Tooltip>
                                       <TooltipTrigger asChild>
-                                        <button className="w-8 h-8 flex items-center justify-center rounded-lg text-fg-subtle hover:text-fg-base hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                                        <button className="w-7 h-7 flex items-center justify-center rounded-[7px] text-fg-subtle hover:text-fg-base hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                                           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                             <path d="M2 5.5C2 4.67157 2.67157 4 3.5 4H6L7.5 6H12.5C13.3284 6 14 6.67157 14 7.5V11.5C14 12.3284 13.3284 13 12.5 13H3.5C2.67157 13 2 12.3284 2 11.5V5.5Z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
                                             <path d="M9 8L11 10M11 10L9 12M11 10H6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -1439,7 +1439,7 @@ export default function RegulatoryComplianceAuditPage() {
                                   <TooltipProvider>
                                     <Tooltip>
                                       <TooltipTrigger asChild>
-                                        <button className="w-8 h-8 flex items-center justify-center rounded-lg text-fg-subtle hover:text-fg-base hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                                        <button className="w-7 h-7 flex items-center justify-center rounded-[7px] text-fg-subtle hover:text-fg-base hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                                           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                             <path d="M8 2V11M8 11L4 7M8 11L12 7M2 14H14" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
                                           </svg>
@@ -1453,7 +1453,7 @@ export default function RegulatoryComplianceAuditPage() {
                                   <TooltipProvider>
                                     <Tooltip>
                                       <TooltipTrigger asChild>
-                                        <button className="w-8 h-8 flex items-center justify-center rounded-lg text-fg-subtle hover:text-fg-base hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                                        <button className="w-7 h-7 flex items-center justify-center rounded-[7px] text-fg-subtle hover:text-fg-base hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                                           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                             <path d="M11.5 2.5L13.5 4.5M2 14L2.5 11.5L12 2L14 4L4.5 13.5L2 14Z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
                                           </svg>
@@ -1467,7 +1467,7 @@ export default function RegulatoryComplianceAuditPage() {
                                   <TooltipProvider>
                                     <Tooltip>
                                       <TooltipTrigger asChild>
-                                        <button className="w-8 h-8 flex items-center justify-center rounded-lg text-fg-subtle hover:text-fg-base hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                                        <button className="w-7 h-7 flex items-center justify-center rounded-[7px] text-fg-subtle hover:text-fg-base hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                                           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                             <path d="M2 4H14M5 4V3C5 2.44772 5.44772 2 6 2H10C10.5523 2 11 2.44772 11 3V4M12 4V13C12 13.5523 11.5523 14 11 14H5C4.44772 14 4 13.5523 4 13V4H12Z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
                                           </svg>
@@ -1524,7 +1524,7 @@ export default function RegulatoryComplianceAuditPage() {
                           <button 
                             onClick={() => setCurrentPage(1)}
                             disabled={currentPage === 1}
-                            className="w-8 h-8 flex items-center justify-center border border-border-base rounded-md text-fg-base hover:bg-bg-subtle transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                            className="w-7 h-7 flex items-center justify-center border border-border-base rounded-[7px] text-fg-base hover:bg-bg-subtle transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                           >
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                               <path d="M9 5L6 8L9 11" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -1534,7 +1534,7 @@ export default function RegulatoryComplianceAuditPage() {
                           <button 
                             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                             disabled={currentPage === 1}
-                            className="w-8 h-8 flex items-center justify-center border border-border-base rounded-md text-fg-base hover:bg-bg-subtle transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                            className="w-7 h-7 flex items-center justify-center border border-border-base rounded-[7px] text-fg-base hover:bg-bg-subtle transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                           >
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                               <path d="M10 5L7 8L10 11" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -1543,7 +1543,7 @@ export default function RegulatoryComplianceAuditPage() {
                           <button 
                             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                             disabled={currentPage === totalPages || totalPages === 0}
-                            className="w-8 h-8 flex items-center justify-center border border-border-base rounded-md text-fg-base hover:bg-bg-subtle transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                            className="w-7 h-7 flex items-center justify-center border border-border-base rounded-[7px] text-fg-base hover:bg-bg-subtle transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                           >
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                               <path d="M6 5L9 8L6 11" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -1552,7 +1552,7 @@ export default function RegulatoryComplianceAuditPage() {
                           <button 
                             onClick={() => setCurrentPage(totalPages)}
                             disabled={currentPage === totalPages || totalPages === 0}
-                            className="w-8 h-8 flex items-center justify-center border border-border-base rounded-md text-fg-base hover:bg-bg-subtle transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                            className="w-7 h-7 flex items-center justify-center border border-border-base rounded-[7px] text-fg-base hover:bg-bg-subtle transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                           >
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                               <path d="M7 5L10 8L7 11" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -1685,7 +1685,7 @@ export default function RegulatoryComplianceAuditPage() {
                                   <TooltipProvider>
                                     <Tooltip>
                                       <TooltipTrigger asChild>
-                                        <button className="w-8 h-8 flex items-center justify-center rounded-lg text-fg-subtle hover:text-fg-base hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                                        <button className="w-7 h-7 flex items-center justify-center rounded-[7px] text-fg-subtle hover:text-fg-base hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                                           <Copy className="w-4 h-4" />
                                         </button>
                                       </TooltipTrigger>
@@ -1697,7 +1697,7 @@ export default function RegulatoryComplianceAuditPage() {
                                   <TooltipProvider>
                                     <Tooltip>
                                       <TooltipTrigger asChild>
-                                        <button className="w-8 h-8 flex items-center justify-center rounded-lg text-fg-subtle hover:text-fg-base hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                                        <button className="w-7 h-7 flex items-center justify-center rounded-[7px] text-fg-subtle hover:text-fg-base hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                                           <Download className="w-4 h-4" />
                                         </button>
                                       </TooltipTrigger>

@@ -76,7 +76,7 @@ export default function ShareThreadDialog({ isOpen, onClose }: ShareThreadDialog
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 rounded-md"
+            className="h-7 w-7 rounded-[7px]"
           >
             <X className="h-4 w-4" />
             <span className="sr-only">Close</span>
@@ -228,7 +228,7 @@ export default function ShareThreadDialog({ isOpen, onClose }: ShareThreadDialog
               onClick={() => setCurrentView("main")}
               variant="ghost"
               size="icon"
-              className="h-8 w-8 rounded-md"
+              className="h-7 w-7 rounded-[7px]"
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
@@ -240,7 +240,7 @@ export default function ShareThreadDialog({ isOpen, onClose }: ShareThreadDialog
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 rounded-md"
+              className="h-7 w-7 rounded-[7px]"
             >
               <X className="h-4 w-4" />
               <span className="sr-only">Close</span>

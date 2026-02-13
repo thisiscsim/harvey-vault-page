@@ -6,11 +6,12 @@ import { motion } from "motion/react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset } from "@/components/ui/sidebar";
 
-import { Plus, FileText, Table2, Settings2, ListPlus, Wand, Orbit, Search, Scale, Paperclip, Mic, SlidersHorizontal, CornerDownLeft, AudioLines } from "lucide-react";
+import { Plus, FileText, Table2, Settings2, Wand, Orbit, Search, Scale, Paperclip, SlidersHorizontal, CornerDownLeft, AudioLines } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Spinner } from "@/components/ui/spinner";
 import { Input } from "@/components/ui/input";
 import { AnimatedBackground } from "../../../components/motion-primitives/animated-background";
+import { TextLoop } from "../../../components/motion-primitives/text-loop";
 import FileManagementDialog from "@/components/file-management-dialog"
 import Image from "next/image";
 import { SvgIcon } from "@/components/svg-icon";
@@ -21,6 +22,7 @@ export default function AssistantHomePage() {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isDeepResearchActive, setIsDeepResearchActive] = useState(false);
+  const [isInputFocused, setIsInputFocused] = useState(false);
   const [activeWorkflowTab, setActiveWorkflowTab] = useState("recommended");
   const [workflowSearchQuery, setWorkflowSearchQuery] = useState("");
   const [isFileManagementOpen, setIsFileManagementOpen] = useState(false);
@@ -251,83 +253,81 @@ export default function AssistantHomePage() {
                   />
                 </div>
 
-                {/* Action Buttons */}
-                <div className="flex gap-3 justify-center mb-5">
-                  <button className="py-1.5 px-3 bg-bg-base border border-border-base rounded-md hover:border-border-strong hover:bg-bg-subtle transition-colors flex items-center gap-[6px]">
-                    <SvgIcon 
-                      src="/central_icons/Draft.svg" 
-                      alt="Draft"
-                      width={16} 
-                      height={16} 
-                      className="text-fg-subtle"
-                    />
-                    <p className="text-fg-base text-sm font-medium">Compose draft</p>
+                {/* Matter & Prompts Row - Above Chatbox */}
+                <div className="flex items-center justify-between mb-[4px]">
+                  <button className="h-6 px-1 inline-flex items-center gap-px rounded-[6px] text-[12px] font-medium leading-[16px] text-fg-muted hover:text-fg-base hover:bg-button-neutral-hover active:bg-button-neutral-pressed transition-colors">
+                    Matter
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M5 6.5L8 9.5L11 6.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   </button>
-                  
-                  <button 
-                    onClick={() => router.push('/review-grid')}
-                    className="py-1.5 px-3 bg-bg-base border border-border-base rounded-md hover:border-border-strong hover:bg-bg-subtle transition-colors flex items-center gap-[6px]"
-                  >
-                    <SvgIcon 
-                      src="/central_icons/Review.svg" 
-                      alt="Review"
-                      width={16} 
-                      height={16} 
-                      className="text-fg-subtle"
-                    />
-                    <span className="text-fg-base text-sm font-medium">Run extraction</span>
+                  <button className="h-6 px-1 inline-flex items-center gap-px rounded-[6px] text-[12px] font-medium leading-[16px] text-fg-muted hover:text-fg-base hover:bg-button-neutral-hover active:bg-button-neutral-pressed transition-colors">
+                    Prompts
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M5 6.5L8 9.5L11 6.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   </button>
                 </div>
 
                 {/* Chat Input - Modern composer design */}
-                <div className="px-4 py-3 transition-all duration-200 bg-bg-subtle border border-border-base focus-within:border-border-strong flex flex-col" style={{ borderRadius: '12px' }}>
-                  {/* Matter chip at top */}
-                  <div className="mb-3">
-                    <button className="h-6 px-2 text-xs text-fg-subtle border border-border-strong rounded-[6px] hover:border-border-interactive transition-colors">
-                      Matter
-                    </button>
+                <div className="w-full bg-bg-subtle border border-border-base rounded-[12px] flex flex-col transition-all duration-200 focus-within:border-border-strong shadow-sm" style={{ minHeight: '120px' }}>
+                  {/* Composer Text Field */}
+                  <div className="pt-[16px] px-[10px] pb-[10px] flex flex-col gap-[10px] flex-1">
+                    {/* Textarea */}
+                    <div className="px-[4px]">
+                      <div className="relative">
+                        <textarea
+                          value={inputValue}
+                          onChange={(e) => {
+                            setInputValue(e.target.value);
+                            // Auto-resize textarea
+                            e.target.style.height = '20px';
+                            e.target.style.height = Math.max(20, e.target.scrollHeight) + 'px';
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              handleSendMessage();
+                            }
+                          }}
+                          onFocus={() => setIsInputFocused(true)}
+                          onBlur={() => setIsInputFocused(false)}
+                          className="w-full bg-transparent focus:outline-none text-fg-base placeholder-fg-muted resize-none overflow-hidden"
+                          style={{ 
+                            fontSize: '14px', 
+                            lineHeight: '20px',
+                            height: '20px',
+                            minHeight: '20px',
+                            maxHeight: '300px'
+                          }}
+                        />
+                        {!inputValue && !isInputFocused && (
+                          <div className="absolute inset-0 pointer-events-none text-fg-muted flex items-start" style={{ fontSize: '14px', lineHeight: '20px' }}>
+                            <TextLoop interval={3000}>
+                              <span>Research IP infringement cases…</span>
+                              <span>Draft deposition questions for fraud case…</span>
+                              <span>Draft an S-1 shell…</span>
+                              <span>Extract key clauses from contract…</span>
+                              <span>Draft a memo on new SEC rules…</span>
+                            </TextLoop>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                   
-                  {/* Textarea */}
-                  <textarea
-                    value={inputValue}
-                    onChange={(e) => {
-                      setInputValue(e.target.value);
-                      // Auto-resize textarea
-                      e.target.style.height = '32px';
-                      e.target.style.height = Math.max(32, e.target.scrollHeight) + 'px';
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSendMessage();
-                      }
-                    }}
-                    placeholder="Ask Harvey. Use @ for sources and attached files."
-                    className="w-full bg-transparent focus:outline-none text-fg-base placeholder-fg-muted resize-none overflow-hidden"
-                    style={{ 
-                      fontSize: '16px', 
-                      lineHeight: '24px',
-                      height: '32px',
-                      minHeight: '32px',
-                      maxHeight: '300px'
-                    }}
-                  />
-                  
-                  {/* Controls Row */}
-                  <div className="flex items-center justify-between mt-3">
-                    {/* Left Controls - Icon buttons */}
-                    <div className="flex items-center gap-1">
+                  {/* Bottom Controls */}
+                  <div className="flex items-end justify-between pl-[10px] pr-[10px] pb-[10px]">
+                    {/* Left Controls - Labeled buttons */}
+                    <div className="flex items-center gap-1 -ml-0.5">
                       <button 
-                        className="w-8 h-8 flex items-center justify-center text-fg-muted hover:text-fg-subtle border border-border-strong rounded-md hover:border-border-interactive transition-colors"
+                        className="h-7 px-2 flex items-center gap-1.5 rounded-[7px] hover:bg-bg-subtle-hover transition-colors text-sm font-medium text-fg-subtle"
                       >
                         <Scale size={16} />
+                        Sources
                       </button>
                       <button 
                         onClick={() => setIsFileManagementOpen(true)}
-                        className="w-8 h-8 flex items-center justify-center text-fg-muted hover:text-fg-subtle border border-border-strong rounded-md hover:border-border-interactive transition-colors"
+                        className="h-7 px-2 flex items-center gap-1.5 rounded-[7px] hover:bg-bg-subtle-hover transition-colors text-sm font-medium text-fg-subtle"
                       >
                         <Paperclip size={16} />
+                        Files
                       </button>
                     </div>
                     
@@ -335,14 +335,8 @@ export default function AssistantHomePage() {
                     <div className="flex items-center gap-2">
                       {/* Ghost icon buttons container */}
                       <div className="flex items-center">
-                        <button className="w-8 h-8 flex items-center justify-center text-fg-muted hover:text-fg-subtle hover:bg-bg-subtle-pressed rounded-md transition-colors">
-                          <Mic size={16} />
-                        </button>
-                        <button className="w-8 h-8 flex items-center justify-center text-fg-muted hover:text-fg-subtle hover:bg-bg-subtle-pressed rounded-md transition-colors">
-                          <SlidersHorizontal size={16} />
-                        </button>
-                        <button className="w-8 h-8 flex items-center justify-center text-fg-muted hover:text-fg-subtle hover:bg-bg-subtle-pressed rounded-md transition-colors">
-                          <ListPlus size={16} />
+                        <button className="h-[28px] px-[6px] flex items-center justify-center rounded-[6px] hover:bg-bg-subtle-hover transition-colors">
+                          <SlidersHorizontal size={16} className="text-fg-base" />
                         </button>
                       </div>
                       
@@ -350,39 +344,41 @@ export default function AssistantHomePage() {
                       {isLoading ? (
                         <button
                           disabled
-                          className="w-8 h-8 flex items-center justify-center bg-bg-interactive text-fg-on-color rounded-md transition-all cursor-not-allowed"
+                          className="h-[28px] px-[8px] flex items-center justify-center bg-bg-interactive text-fg-on-color rounded-[6px] transition-all cursor-not-allowed"
                         >
                           <Spinner size="sm" />
                         </button>
                       ) : inputValue.trim() ? (
                         <button
                           onClick={handleSendMessage}
-                          className="w-8 h-8 flex items-center justify-center bg-bg-interactive text-fg-on-color rounded-md hover:opacity-90 transition-all"
+                          className="h-[28px] px-[8px] flex items-center justify-center bg-bg-interactive text-fg-on-color rounded-[6px] hover:opacity-90 transition-all"
                         >
                           <CornerDownLeft size={16} />
                         </button>
                       ) : (
                         <button
-                          className="w-8 h-8 flex items-center justify-center bg-bg-subtle-pressed text-fg-subtle rounded-md hover:bg-bg-component transition-all"
+                          className="h-[28px] px-[8px] flex items-center justify-center bg-bg-subtle-hover rounded-[6px] hover:bg-bg-subtle-pressed transition-all"
                         >
-                          <AudioLines size={18} />
+                          <AudioLines size={16} className="text-fg-base" />
                         </button>
                       )}
                     </div>
                   </div>
                 </div>
                 
-              {/* Action Cards Section - Below Chatbox */}
-              <div className="mt-3">
-                <div className="flex gap-3 justify-center flex-wrap mx-auto" style={{ maxWidth: '740px' }}>
+              {/* Action Tags - Below Chatbox */}
+              <div className="mt-4">
+                <div className="flex gap-2 justify-center mx-auto">
                   {[
-                    { icon: "/lexis.svg", label: "LexisNexis", iconClass: "", useSvgIcon: false },
-                    { icon: "/central_icons/Building.svg", label: "EDGAR", iconClass: "text-ui-blue-fg", useSvgIcon: true },
-                    { icon: "/folderIcon.svg", label: "Amend v Delta IP Litigation", iconClass: "", useSvgIcon: false },
-                    { icon: "/folderIcon.svg", label: "Regulatory Compliance Audit", iconClass: "", useSvgIcon: false },
+                    { icon: "/central_icons/Draft.svg", label: "Compose draft", iconClass: "text-fg-muted", useSvgIcon: true, onClick: undefined as (() => void) | undefined },
+                    { icon: "/central_icons/Review.svg", label: "Run extraction", iconClass: "text-fg-muted", useSvgIcon: true, onClick: (() => router.push('/review-grid')) as (() => void) | undefined },
+                    { icon: "/lexis.svg", label: "LexisNexis", iconClass: "", useSvgIcon: false, onClick: undefined as (() => void) | undefined },
+                    { icon: "/central_icons/Building.svg", label: "EDGAR", iconClass: "text-ui-blue-fg", useSvgIcon: true, onClick: undefined as (() => void) | undefined },
+                    { icon: "/folderIcon.svg", label: "Amend v Delta IP Litigation", iconClass: "", useSvgIcon: false, onClick: undefined as (() => void) | undefined },
                   ].map((chip, index) => (
                     <motion.button
                       key={chip.label}
+                      onClick={chip.onClick}
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{
@@ -390,30 +386,28 @@ export default function AssistantHomePage() {
                         delay: 0.3 + index * 0.08,
                         ease: [0.25, 0.46, 0.45, 0.94]
                       }}
-                      className="py-1.5 px-3 bg-bg-base border border-border-base rounded-md hover:border-border-strong hover:bg-bg-subtle transition-colors flex items-center gap-[6px]"
-                      style={{ maxWidth: '150px' }}
+                      className="px-[10px] py-[6px] border border-border-base rounded-full hover:border-border-strong hover:bg-bg-subtle transition-colors flex items-center gap-1"
                     >
                       {chip.useSvgIcon ? (
                         <SvgIcon 
                           src={chip.icon} 
                           alt="" 
-                          width={16} 
-                          height={16} 
+                          width={14} 
+                          height={14} 
                           className={chip.iconClass}
                         />
                       ) : (
                         <Image 
                           src={chip.icon} 
                           alt="" 
-                          width={16} 
-                          height={16} 
-                          style={{ width: '16px', height: '16px' }} 
+                          width={14} 
+                          height={14} 
+                          style={{ width: '14px', height: '14px' }} 
                           className={chip.iconClass || undefined}
                           unoptimized
                         />
                       )}
-                      <span className="text-fg-base text-sm font-normal truncate">{chip.label}</span>
-                      <Plus size={16} className="text-fg-subtle shrink-0" />
+                      <span className="text-fg-base text-sm font-medium whitespace-nowrap">{chip.label}</span>
                     </motion.button>
                   ))}
                 </div>

@@ -75,7 +75,7 @@ export default function ShareArtifactDialog({ isOpen, onClose, artifactTitle }: 
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 rounded-md"
+              className="h-7 w-7 rounded-[7px]"
             >
               <X className="h-4 w-4" />
               <span className="sr-only">Close</span>

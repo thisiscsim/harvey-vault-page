@@ -1034,4 +1034,3 @@ th:has(.dynamic-column-header) {
   transform-origin: left;
   animation: grow-width 0.8s ease-out forwards;
 }
-

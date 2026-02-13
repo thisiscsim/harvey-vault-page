@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { GripVertical, ArrowLeft, Layers, UserPlus, Check, X, Download, ChevronRight, ChevronDown } from "lucide-react";
+import { GripVertical, ArrowLeft, Layers, UserPlus, Check, X, Download, Upload, ChevronRight, ChevronDown } from "lucide-react";
 import {
   createColumnHelper,
   flexRender,
@@ -19,6 +19,7 @@ import ExportReviewDialog from "@/components/export-review-dialog";
 import IManageFilePickerDialog from "@/components/imanage-file-picker-dialog";
 import ReviewTableActionBar from "@/components/review-table-action-bar";
 import ManageGroupedFilesDialog from "@/components/manage-grouped-files-dialog";
+import BatchColumnsDialog from "@/components/batch-columns-dialog";
 import ReviewTableViewBar, { View } from "@/components/review-table-view-bar";
 import CreateViewDialog from "@/components/create-view-dialog";
 import Image from "next/image";
@@ -263,6 +264,7 @@ export default function ReviewArtifactPanel({
   const [hoveredRow, setHoveredRow] = React.useState<number | null>(null);
   const [columnOrder, setColumnOrder] = React.useState<string[]>([]);
   const [draggedColumn, setDraggedColumn] = React.useState<string | null>(null);
+  const draggedColumnRef = React.useRef<string | null>(null);
   const [hoveredHeader, setHoveredHeader] = React.useState<string | null>(null);
   const [dropTarget, setDropTarget] = React.useState<string | null>(null);
   const [iManageDialogOpen, setIManageDialogOpen] = React.useState(false);
@@ -272,6 +274,7 @@ export default function ReviewArtifactPanel({
   const [expandedFolders, setExpandedFolders] = React.useState<Set<number>>(new Set());
   const fileColumnRef = React.useRef<HTMLTableCellElement>(null);
   const tableContainerRef = React.useRef<HTMLDivElement>(null);
+  const tableRef = React.useRef<HTMLTableElement>(null);
   const [addColumnPopoverPosition, setAddColumnPopoverPosition] = React.useState({ top: 0, left: 0 });
   
   // File grouping animation state
@@ -291,6 +294,8 @@ export default function ReviewArtifactPanel({
   const typingTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   const [selectedModel, setSelectedModel] = React.useState('auto');
   const [modelDropdownOpen, setModelDropdownOpen] = React.useState(false);
+  const [pendingColumnId, setPendingColumnId] = React.useState<string | null>(null);
+  const [batchColumnsDialogOpen, setBatchColumnsDialogOpen] = React.useState(false);
   
   // View bar state
   const [views, setViews] = React.useState<View[]>([
@@ -319,20 +324,46 @@ export default function ReviewArtifactPanel({
   // Force update counter for individual cells - columnId -> rowId -> updateCount
   const [cellUpdateTriggers, setCellUpdateTriggers] = useState<Record<string, Record<number, number>>>({});
   
-  // Update popover position when it opens
+  // Update popover position when it opens - align with the pending column's header
   React.useEffect(() => {
-    if (addColumnPopoverOpen && fileColumnRef.current) {
-      const rect = fileColumnRef.current.getBoundingClientRect();
-      setAddColumnPopoverPosition({
-        top: rect.top + 4, // 4px from the top border of the table
-        left: rect.right + 4, // 4px gap to the right of the file column
-      });
+    if (addColumnPopoverOpen && pendingColumnId && tableContainerRef.current) {
+      // Find the pending column's header cell in the DOM
+      const pendingTh = tableContainerRef.current.querySelector(`th`) 
+        ? Array.from(tableContainerRef.current.querySelectorAll('th')).find(th => {
+            // Find the th that contains "Untitled" text for the new column
+            const allCols = table.getAllColumns();
+            const pendingColIndex = allCols.findIndex(c => c.id === pendingColumnId);
+            const thElements = tableContainerRef.current!.querySelectorAll('thead th');
+            return thElements[pendingColIndex] === th;
+          })
+        : null;
+      
+      if (pendingTh) {
+        const rect = pendingTh.getBoundingClientRect();
+        setAddColumnPopoverPosition({
+          top: rect.bottom + 4,
+          left: rect.left + 4,
+        });
+      } else if (fileColumnRef.current) {
+        // Fallback: position after the last column header
+        const rect = fileColumnRef.current.getBoundingClientRect();
+        setAddColumnPopoverPosition({
+          top: rect.bottom + 4,
+          left: rect.right + 4,
+        });
+      }
     }
-  }, [addColumnPopoverOpen]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [addColumnPopoverOpen, pendingColumnId]);
   
-  // Reset popover state when closed
+  // Reset popover state when closed - remove pending column if not run
   React.useEffect(() => {
     if (!addColumnPopoverOpen) {
+      // Remove the pending column if it wasn't "run"
+      if (pendingColumnId) {
+        setDynamicColumns(prev => prev.filter(c => c.id !== pendingColumnId));
+        setPendingColumnId(null);
+      }
       setColumnQuestion('');
       setColumnHeader('');
       setIsGeneratingHeader(false);
@@ -341,6 +372,7 @@ export default function ReviewArtifactPanel({
         clearTimeout(typingTimeoutRef.current);
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [addColumnPopoverOpen]);
   
   // Handle question input change with debounced header generation
@@ -393,37 +425,73 @@ export default function ReviewArtifactPanel({
   
   // Mock responses for dynamic columns (simulating AI-generated content)
   const generateMockResponse = (question: string): string => {
-    // Simple mock responses based on question keywords
-    if (question.toLowerCase().includes('date') || question.toLowerCase().includes('signing')) {
+    const q = question.toLowerCase();
+    
+    if (q.includes('date') || q.includes('signing') || q.includes('effective')) {
       const dates = ['January 15, 2024', 'March 3, 2023', 'December 1, 2022', 'August 22, 2023', 'November 8, 2024', 'February 14, 2023', 'July 4, 2022', 'September 30, 2023', 'April 19, 2024', 'October 11, 2023', 'May 5, 2023', 'June 28, 2024'];
       return dates[Math.floor(Math.random() * dates.length)];
     }
-    if (question.toLowerCase().includes('term') || question.toLowerCase().includes('duration')) {
-      const terms = ['12 months', '24 months', '36 months', '5 years', '10 years', 'Perpetual', 'Until terminated', '18 months'];
+    if (q.includes('term') || q.includes('duration')) {
+      const terms = ['12 months from execution date', '24 months', '36 months with automatic renewal for successive 12-month periods unless terminated by either party with 90 days written notice', '5 years', '10 years from the closing date', 'Perpetual, subject to termination provisions in Section 8', 'Until terminated by mutual agreement', '18 months with option to extend'];
       return terms[Math.floor(Math.random() * terms.length)];
     }
-    if (question.toLowerCase().includes('value') || question.toLowerCase().includes('amount') || question.toLowerCase().includes('price')) {
-      const values = ['$1,500,000', '$250,000', '$5,000,000', '$750,000', '$2,300,000', 'Undisclosed', '$450,000', '$8,200,000'];
+    if (q.includes('value') || q.includes('amount') || q.includes('price') || q.includes('consideration')) {
+      const values = ['$1,500,000 in cash at closing, plus an additional earn-out of up to $500,000 based on performance milestones', '$250,000', '$5,000,000 aggregate consideration consisting of $3.2M cash and $1.8M in stock', '$750,000 payable in three equal installments', '$2,300,000', 'Undisclosed', '$450,000 plus assumption of approximately $120,000 in outstanding liabilities', '$8,200,000'];
       return values[Math.floor(Math.random() * values.length)];
     }
-    // Default response
-    const defaults = ['Information extracted from document...', 'See section 4.2 for details', 'Clause present in agreement', 'Not specified in document'];
+    if (q.includes('party') || q.includes('parties') || q.includes('acquiror') || q.includes('target') || q.includes('who')) {
+      const parties = [
+        'Acme Corporation (Acquiror) and GlobalTech Inc. (Target)', 
+        'Valar AI, Inc.', 
+        'Unicorn Capital Partners LLC, as administrative agent, and Nkomati Claims Management Ltd., as borrower',
+        'Not specified in document',
+        'TerreStar 1.4 Holdings LLC (Lessor), TerreStar Networks Inc. (Lessee), and Harbinger Capital Partners (Guarantor)',
+        'Multiple parties including the Company, the Investors (as defined in Schedule A), and the Placement Agent',
+        'Litigation Holdings Corp.',
+      ];
+      return parties[Math.floor(Math.random() * parties.length)];
+    }
+    if (q.includes('clause') || q.includes('provision') || q.includes('section')) {
+      const clauses = [
+        'Section 7.2 contains a standard force majeure clause covering acts of God, war, terrorism, pandemic, and governmental action. The clause requires written notice within 5 business days.',
+        'Clause present in agreement — see Article IV, Section 4.3(b)',
+        'No such provision found in this document',
+        'The agreement contains a broad non-compete provision restricting the seller for 3 years within a 50-mile radius',
+        'Standard representations and warranties as set forth in Sections 3.1 through 3.24, with survival period of 18 months post-closing',
+        'See section 4.2 for details',
+        'The indemnification provision caps liability at the lesser of $2M or the total consideration paid, subject to a deductible basket of $150,000',
+      ];
+      return clauses[Math.floor(Math.random() * clauses.length)];
+    }
+    if (q.includes('govern') || q.includes('jurisdiction') || q.includes('law')) {
+      const laws = ['State of Delaware', 'New York', 'State of California', 'England and Wales', 'State of Texas', 'Singapore', 'Governed by the laws of the State of New York without regard to conflicts of law principles'];
+      return laws[Math.floor(Math.random() * laws.length)];
+    }
+    // Default varied responses
+    const defaults = [
+      'Information extracted from document — the relevant provisions are found in Exhibit B, which outlines the operational requirements and compliance obligations applicable to both parties.',
+      'See section 4.2 for details',
+      'Clause present in agreement',
+      'Not specified in document',
+      'The document references multiple related agreements including the Side Letter dated January 10, 2023 and the Amendment No. 2 to the Credit Agreement',
+      'Yes — subject to customary conditions precedent including regulatory approval and third-party consents',
+      'No applicable provision identified after reviewing all sections of the agreement',
+      'Omnis hic dignissimos repellendus incidunt tempore sunt. Magni null corrupti dolores quia et.',
+      'Per Section 9.1, the agreement may be terminated by either party upon 30 days written notice in the event of a material breach that remains uncured',
+    ];
     return defaults[Math.floor(Math.random() * defaults.length)];
   };
   
-  // Handle running a column - adds a new column with streaming state
+  // Handle running a column - updates the pending column with real data
   const handleRunColumn = useCallback(() => {
-    if (!columnHeader || !columnQuestion) return;
+    if (!columnHeader || !columnQuestion || !pendingColumnId) return;
     
-    const columnId = `dynamic-${Date.now()}`;
+    const columnId = pendingColumnId;
     
-    // Create the new column structure (no responses stored here)
-    const newColumn: DynamicColumn = {
-      id: columnId,
-      header: columnHeader,
-      question: columnQuestion,
-      visible: true,
-    };
+    // Update the pending column with the real header and question
+    setDynamicColumns(prev => prev.map(c => 
+      c.id === columnId ? { ...c, header: columnHeader, question: columnQuestion } : c
+    ));
     
     // Initialize cell data in ref (loading state, empty response)
     cellDataRef.current[columnId] = {};
@@ -433,8 +501,10 @@ export default function ReviewArtifactPanel({
       initialTriggers[row.id] = 0;
     });
     
-    setDynamicColumns(prev => [...prev, newColumn]);
     setCellUpdateTriggers(prev => ({ ...prev, [columnId]: initialTriggers }));
+    
+    // Clear pending so the close effect doesn't remove it
+    setPendingColumnId(null);
     
     // Close the popover
     setAddColumnPopoverOpen(false);
@@ -467,6 +537,50 @@ export default function ReviewArtifactPanel({
       }, randomDelay);
     });
   }, [columnHeader, columnQuestion, tableData]);
+
+  // Handle batch adding multiple columns at once
+  const handleBatchAddColumns = useCallback((batchCols: { title: string; query: string; type: string }[]) => {
+    batchCols.forEach((col, idx) => {
+      const columnId = `dynamic-${Date.now()}-${idx}`;
+      const newColumn: DynamicColumn = {
+        id: columnId,
+        header: col.title,
+        question: col.query,
+        visible: true,
+      };
+      
+      cellDataRef.current[columnId] = {};
+      const initialTriggers: Record<number, number> = {};
+      tableData.forEach(row => {
+        cellDataRef.current[columnId][row.id] = { isLoading: true, response: '' };
+        initialTriggers[row.id] = 0;
+      });
+      
+      setDynamicColumns(prev => [...prev, newColumn]);
+      setCellUpdateTriggers(prev => ({ ...prev, [columnId]: initialTriggers }));
+      
+      // Generate mock responses with staggered delays
+      const baseDelay = 600 + idx * 300;
+      const maxAdditionalDelay = 2500;
+      
+      tableData.forEach((row) => {
+        const randomDelay = baseDelay + Math.random() * maxAdditionalDelay;
+        setTimeout(() => {
+          const response = generateMockResponse(col.query);
+          if (cellDataRef.current[columnId]) {
+            cellDataRef.current[columnId][row.id] = { isLoading: false, response };
+          }
+          setCellUpdateTriggers(prev => ({
+            ...prev,
+            [columnId]: { 
+              ...prev[columnId], 
+              [row.id]: (prev[columnId]?.[row.id] || 0) + 1 
+            }
+          }));
+        }, randomDelay);
+      });
+    });
+  }, [tableData]);
   
   // Transform selected files into table data format - only for initialization
   const initialData: Document[] = React.useMemo(() => {
@@ -1135,7 +1249,7 @@ export default function ReviewArtifactPanel({
           <span>File</span>
         </div>
       ),
-      size: 220,
+      size: 260,
       minSize: 100,
       maxSize: 280,
       cell: ({ row }) => {
@@ -1392,7 +1506,11 @@ export default function ReviewArtifactPanel({
       // updateTrigger is intentionally not used in render, just for triggering re-render
       updateTrigger?: number;
     }) => {
-      const cellData = cellDataRef.current[columnId]?.[rowId] || { isLoading: true, response: '' };
+      const cellData = cellDataRef.current[columnId]?.[rowId];
+      // If no cell data exists yet (pending column), show empty cell
+      if (!cellData) {
+        return <span className="text-fg-muted"></span>;
+      }
       const { isLoading, response } = cellData;
       
       return (
@@ -1561,7 +1679,7 @@ export default function ReviewArtifactPanel({
             {chatOpen && (
               <button 
                 onClick={onClose}
-                className="w-8 h-8 flex items-center justify-center rounded-[8px] hover:bg-bg-subtle transition-colors text-fg-subtle"
+                className="w-7 h-7 flex items-center justify-center rounded-[7px] hover:bg-bg-subtle transition-colors text-fg-subtle"
                 title="Close artifact"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1585,9 +1703,16 @@ export default function ReviewArtifactPanel({
           textWrap={textWrap}
           onTextWrapChange={setTextWrap}
           hasFiles={isFilesOnlyMode}
-          onAddColumn={() => setAddColumnPopoverOpen(true)}
+          onAddColumn={() => {
+            const colId = `dynamic-${Date.now()}`;
+            const newCol: DynamicColumn = { id: colId, header: 'Untitled', question: '', visible: true };
+            setDynamicColumns(prev => [...prev, newCol]);
+            setPendingColumnId(colId);
+            setAddColumnPopoverOpen(true);
+          }}
           isGroupingFiles={isGroupingFiles}
           onGroupFiles={handleAutomatedGrouping}
+          onBatchColumns={() => setBatchColumnsDialogOpen(true)}
         />
         
         {/* Filter Bar */}
@@ -1743,19 +1868,24 @@ export default function ReviewArtifactPanel({
                   </p>
                   
                   {/* Upload Button */}
-                  <button 
-                    className="h-8 flex items-center justify-center gap-2 px-3 bg-button-inverted text-fg-on-color rounded-[8px] hover:bg-button-inverted-hover active:bg-button-inverted-pressed transition-colors mb-4 text-sm font-normal"
+                  <Button 
+                    variant="default"
+                    size="medium"
+                    className="mb-4 gap-1.5"
                   >
+                    <Upload className="h-4 w-4" />
                     Upload files
-                  </button>
+                  </Button>
                   
                   {/* Divider Text */}
                   <p className="text-xs text-fg-muted mb-4">Or choose from</p>
                   
                   {/* Integration Options */}
                   <div className="flex items-center gap-2">
-                    <button 
-                      className="h-8 flex items-center gap-2 px-3 border border-border-base rounded-[8px] bg-button-neutral hover:bg-button-neutral-hover active:bg-button-neutral-pressed transition-colors text-fg-base text-sm font-normal"
+                    <Button 
+                      variant="outline"
+                      size="medium"
+                      className="gap-1.5"
                     >
                       <SvgIcon 
                         src="/central_icons/Vault.svg" 
@@ -1764,12 +1894,14 @@ export default function ReviewArtifactPanel({
                         height={16}
                         className="text-fg-base"
                       />
-                      <span>Add from Vault</span>
-                    </button>
+                      Add from Vault
+                    </Button>
                     
-                    <button 
+                    <Button 
+                      variant="outline"
+                      size="medium"
+                      className="gap-1.5"
                       onClick={() => setIManageDialogOpen(true)}
-                      className="h-8 flex items-center gap-2 px-3 border border-border-base rounded-[8px] bg-button-neutral hover:bg-button-neutral-hover active:bg-button-neutral-pressed transition-colors text-fg-base text-sm font-normal"
                     >
                       <Image 
                         src="/imanage.svg" 
@@ -1777,8 +1909,8 @@ export default function ReviewArtifactPanel({
                         width={16} 
                         height={16}
                       />
-                      <span>Add from iManage</span>
-                    </button>
+                      Add from iManage
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -1839,11 +1971,12 @@ export default function ReviewArtifactPanel({
                   </div>
                 </div>
               )}
-              <table 
+              <table
+              ref={tableRef}
               className={`border-separate border-spacing-0 ${
-                table.getState().columnSizingInfo.isResizingColumn ? 'select-none' : ''
+                table.getState().columnSizingInfo.isResizingColumn ? 'select-none cursor-col-resize' : ''
               }`} 
-              style={{ width: table.getCenterTotalSize() }}
+              style={{ width: table.getCenterTotalSize(), tableLayout: 'fixed' }}
             >
               <colgroup>
                 {table.getAllColumns().map((column) => (
@@ -1865,16 +1998,13 @@ export default function ReviewArtifactPanel({
                         className={`px-3 h-8 text-left font-medium relative transition-colors text-fg-subtle ${
                           header.id === 'select' ? 'w-[48px]' : ''
                         } ${header.id === 'forceMajeureClause' ? 'w-[325px]' : ''} ${header.id === 'agreementParties' ? 'w-[325px]' : ''} ${header.id === 'assignmentProvisionSummary' ? 'w-[325px]' : ''} ${header.index !== 0 ? 'border-l border-border-base' : ''} ${header.index === headerGroup.headers.length - 1 ? 'border-r border-border-base' : ''} border-b border-border-base ${
-                          // For static draggable columns, use React state for hover background
-                          // For dynamic columns (starting with 'dynamic-'), CSS handles the hover
-                          header.column.columnDef.meta?.draggable && !header.id.startsWith('dynamic-') && draggedColumn === header.id ? 'bg-bg-subtle' : 
+                          header.column.columnDef.meta?.draggable && !header.id.startsWith('dynamic-') && draggedColumn === header.id ? 'bg-bg-subtle opacity-40' : 
                           header.column.columnDef.meta?.draggable && !header.id.startsWith('dynamic-') && hoveredHeader === header.id ? 'bg-bg-subtle' : 
-                          // Dynamic columns use bg-bg-base, CSS handles hover
                           'bg-bg-base'
                         } ${
                           header.column.columnDef.meta?.draggable ? 'cursor-grab active:cursor-grabbing' : ''
                         } ${
-                          dropTarget === header.id && draggedColumn !== header.id ? 'border-l-2 border-l-border-interactive' : ''
+                          dropTarget === header.id && draggedColumn !== header.id ? 'border-l-[2px] border-l-border-interactive' : ''
                         } ${
                           header.index === headerGroup.headers.length - 1 && isFilesOnlyMode ? 'extend-border-line' : ''
                         }`}
@@ -1882,33 +2012,66 @@ export default function ReviewArtifactPanel({
                           fontSize: '12px',
                           lineHeight: '16px',
                           width: header.column.getSize(),
-                          position: 'relative'
+                          position: 'relative',
+                          overflow: 'visible',
                         }}
-                        draggable={header.column.columnDef.meta?.draggable}
                         onMouseEnter={() => {
-                          // Only set hover state for static columns, not dynamic ones
                           if (header.column.columnDef.meta?.draggable && !header.id.startsWith('dynamic-')) {
                             setHoveredHeader(header.id);
                           }
                         }}
                         onMouseLeave={() => {
-                          // Only clear if it's not a dynamic column
                           if (!header.id.startsWith('dynamic-')) {
                             setHoveredHeader(null);
                           }
                         }}
+                        draggable={header.column.columnDef.meta?.draggable && !table.getState().columnSizingInfo.isResizingColumn}
                         onDragStart={(e) => {
+                          if (table.getState().columnSizingInfo.isResizingColumn) {
+                            e.preventDefault();
+                            return;
+                          }
                           if (header.column.columnDef.meta?.draggable) {
+                            if (columnOrder.length === 0) {
+                              setColumnOrder(table.getAllColumns().map(col => col.id));
+                            }
+                            draggedColumnRef.current = header.id;
                             setDraggedColumn(header.id);
                             e.dataTransfer.effectAllowed = 'move';
+                            // Create a properly visible off-screen element for the drag image
+                            const th = e.currentTarget as HTMLElement;
+                            const dragEl = document.createElement('div');
+                            const text = th.textContent?.trim() || '';
+                            dragEl.textContent = text;
+                            Object.assign(dragEl.style, {
+                              position: 'fixed',
+                              top: '0px',
+                              left: '0px',
+                              padding: '4px 12px',
+                              background: '#ffffff',
+                              border: '1px solid #e5e3e0',
+                              borderRadius: '6px',
+                              fontSize: '12px',
+                              fontWeight: '500',
+                              color: '#6b6860',
+                              boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+                              whiteSpace: 'nowrap',
+                              zIndex: '99999',
+                              pointerEvents: 'none',
+                              transform: 'translate(-100%, -100%)',
+                            });
+                            document.body.appendChild(dragEl);
+                            e.dataTransfer.setDragImage(dragEl, dragEl.offsetWidth / 2, 14);
+                            setTimeout(() => { try { document.body.removeChild(dragEl); } catch {} }, 0);
                           }
                         }}
                         onDragEnd={() => {
+                          draggedColumnRef.current = null;
                           setDraggedColumn(null);
                           setDropTarget(null);
                         }}
                         onDragOver={(e) => {
-                          if (header.column.columnDef.meta?.draggable && draggedColumn && draggedColumn !== header.id) {
+                          if (header.column.columnDef.meta?.draggable && draggedColumnRef.current && draggedColumnRef.current !== header.id) {
                             e.preventDefault();
                             e.dataTransfer.dropEffect = 'move';
                             setDropTarget(header.id);
@@ -1922,16 +2085,17 @@ export default function ReviewArtifactPanel({
                         onDrop={(e) => {
                           e.preventDefault();
                           setDropTarget(null);
-                          if (!draggedColumn || draggedColumn === header.id || !header.column.columnDef.meta?.draggable) return;
-                          
-                          const draggedColumnIndex = table.getAllColumns().findIndex(col => col.id === draggedColumn);
-                          const targetColumnIndex = table.getAllColumns().findIndex(col => col.id === header.id);
-                          
+                          const dragged = draggedColumnRef.current;
+                          if (!dragged || dragged === header.id || !header.column.columnDef.meta?.draggable) return;
+                          const currentOrder = columnOrder.length > 0 
+                            ? [...columnOrder] 
+                            : table.getAllColumns().map(col => col.id);
+                          const draggedColumnIndex = currentOrder.indexOf(dragged);
+                          const targetColumnIndex = currentOrder.indexOf(header.id);
                           if (draggedColumnIndex !== -1 && targetColumnIndex !== -1) {
-                            const newColumnOrder = [...table.getAllColumns().map(col => col.id)];
-                            const [removed] = newColumnOrder.splice(draggedColumnIndex, 1);
-                            newColumnOrder.splice(targetColumnIndex, 0, removed);
-                            setColumnOrder(newColumnOrder);
+                            const [removed] = currentOrder.splice(draggedColumnIndex, 1);
+                            currentOrder.splice(targetColumnIndex, 0, removed);
+                            setColumnOrder(currentOrder);
                           }
                         }}
                       >
@@ -1945,24 +2109,22 @@ export default function ReviewArtifactPanel({
                           <div
                             onMouseDown={header.getResizeHandler()}
                             onTouchStart={header.getResizeHandler()}
-                            className={`absolute right-0 top-0 cursor-col-resize select-none touch-none group`}
-                            style={{
-                              width: '4px',
-                              height: '100%',
-                              transform: 'translateX(50%)',
-                              zIndex: 10,
-                            }}
+                            className="absolute right-0 top-0 h-full cursor-col-resize select-none touch-none group"
+                            style={{ width: '9px', transform: 'translateX(50%)', zIndex: 10 }}
                           >
-                            {/* Visual line that appears on hover or when resizing */}
+                            {/* Visual line - spans table content height */}
                             <div
-                              className={`absolute left-1/2 top-0 h-full transition-opacity ${
+                              className={`absolute left-1/2 top-0 pointer-events-none ${
                                 header.column.getIsResizing() 
-                                  ? 'bg-bg-interactive opacity-100' 
-                                  : 'bg-fg-disabled opacity-0 group-hover:opacity-100'
+                                  ? 'bg-fg-base opacity-100' 
+                                  : 'bg-fg-base opacity-0 group-hover:opacity-100'
                               }`}
                               style={{
-                                width: '1.5px',
+                                width: '1px',
                                 transform: 'translateX(-50%)',
+                                height: tableRef.current 
+                                  ? `${tableRef.current.offsetHeight}px` 
+                                  : '100%',
                               }}
                             />
                           </div>
@@ -1996,11 +2158,11 @@ export default function ReviewArtifactPanel({
                         return (
                         <td
                           key={cell.id}
-                          className={`${cellPadding} h-8 ${isRowSelected ? 'bg-bg-base-hover' : isRowHovered ? 'bg-bg-base-hover' : 'bg-bg-base'} ${cell.column.id === 'forceMajeureClause' ? 'w-[325px]' : ''} ${cell.column.id === 'agreementParties' ? 'w-[325px]' : ''} ${cell.column.id === 'assignmentProvisionSummary' ? 'w-[325px]' : ''} ${cell.column.id !== table.getAllColumns()[0].id ? 'border-l border-border-base' : ''} ${isLastCell ? 'border-r border-border-base' : ''} border-b border-border-base relative ${shouldExtendBorder ? 'extend-border-line' : cell.column.id === 'fileName' ? '' : 'overflow-hidden'} ${isSelectColumn ? 'cursor-pointer' : ''}`}
+                          className={`${cellPadding} ${textWrap ? 'py-2' : 'h-8'} ${isRowSelected ? 'bg-bg-base-hover' : isRowHovered ? 'bg-bg-base-hover' : 'bg-bg-base'} ${cell.column.id === 'forceMajeureClause' ? 'w-[325px]' : ''} ${cell.column.id === 'agreementParties' ? 'w-[325px]' : ''} ${cell.column.id === 'assignmentProvisionSummary' ? 'w-[325px]' : ''} ${cell.column.id !== table.getAllColumns()[0].id ? 'border-l border-border-base' : ''} ${isLastCell ? 'border-r border-border-base' : ''} border-b border-border-base relative ${shouldExtendBorder ? 'extend-border-line' : cell.column.id === 'fileName' ? '' : 'overflow-hidden'} ${isSelectColumn ? 'cursor-pointer' : ''}`}
                           style={{ 
                             fontSize: '12px', 
                             lineHeight: '16px',
-                            verticalAlign: getVerticalAlign(),
+                            verticalAlign: textWrap ? getVerticalAlign() : 'middle',
                             width: cell.column.getSize()
                           }}
                         >
@@ -2097,6 +2259,13 @@ export default function ReviewArtifactPanel({
         onCreateView={handleCreateView}
       />
       
+      {/* Batch Columns Dialog */}
+      <BatchColumnsDialog
+        isOpen={batchColumnsDialogOpen}
+        onClose={() => setBatchColumnsDialogOpen(false)}
+        onAddColumns={handleBatchAddColumns}
+      />
+
       {/* Add Column Popover */}
       {addColumnPopoverOpen && (
         <div 
